@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+
+# 作業系統與編輯器快取
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 暫存測試檔
+*.log
+*.tmp

@@ -1,0 +1,17 @@
+# Render Blueprint 佈署設定檔
+# 官方文件：https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: eink-spectra6-api
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
