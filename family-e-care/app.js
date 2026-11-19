@@ -1,17 +1,18 @@
 // ==============================================================================
-// Family e-Care — 智慧家庭遠端關懷電子紙系統 Prototype 核心邏輯
+// Family E-Care — 智慧家庭遠端關懷電子紙系統 Prototype 核心邏輯
+// 深度優化：App 關懷卡視覺設計器 ＋ 客廳 4~6 吋電子紙擬真顯示
 // ==============================================================================
 
 // 預設資料儲存鍵值
 const STORAGE_KEYS = {
-  CAROUSEL: 'family_ecare_carousel',
-  SCHEDULE: 'family_ecare_schedule',
-  HISTORY: 'family_ecare_history',
-  CONFIG: 'family_ecare_config',
-  PENDING: 'family_ecare_pending'
+  CAROUSEL: 'family_ecare_carousel_v2',
+  SCHEDULE: 'family_ecare_schedule_v2',
+  HISTORY: 'family_ecare_history_v2',
+  PENDING: 'family_ecare_pending_v2',
+  DISPLAY_MODE: 'family_ecare_display_mode'
 };
 
-// 預設初始資料 (若 localStorage 為空時載入)
+// 預設初始資料
 const DEFAULT_CAROUSEL = [
   { id: 1, text: "奶奶早安！今天出門散步記得穿厚外套，多喝溫水喔！🌸", active: true, time: "08:00" },
   { id: 2, text: "降血壓藥放在餐桌左邊白色藥盒，記得晚餐後吃一顆！💊", active: false, time: "12:30" },
@@ -29,13 +30,13 @@ const DEFAULT_HISTORY = [
     time: "2026-11-19 08:00",
     type: "常態輪播",
     content: "奶奶早安！今天出門散步記得穿厚外套，多喝溫水喔！🌸",
-    status: "read", // read (已按鈕確認) 或 pending (等待長輩閱讀)
+    status: "read", // read (長輩已按鍵確認) 或 pending (等待長輩閱讀)
     flashedAt: "2026-11-19 08:05:12"
   },
   {
     id: 102,
     time: "2026-11-19 12:30",
-    type: "服藥排程",
+    type: "定時排程",
     content: "中午飯後請服用胃藥一顆，祝奶奶用餐愉快！🍲",
     status: "read",
     flashedAt: "2026-11-19 12:34:40"
@@ -47,13 +48,14 @@ let carouselItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.CAROUSEL)) || D
 let scheduleItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULE)) || DEFAULT_SCHEDULE;
 let historyItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY)) || DEFAULT_HISTORY;
 let pendingMessage = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING)) || null;
+let currentDisplayMode = localStorage.getItem(STORAGE_KEYS.DISPLAY_MODE) || 'color'; // 'color' 全彩 或 'tri' 黑紅白三色
 
 // 輪詢計時變數 (5 分鐘 = 300 秒)
 const POLL_INTERVAL_SECONDS = 300;
 let pollTimeRemaining = POLL_INTERVAL_SECONDS;
 let pollTimerInterval = null;
 
-// DOM 元素快取
+// App 介面元素快取
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 const carouselList = document.getElementById('carouselList');
@@ -63,34 +65,54 @@ const statTotal = document.getElementById('statTotal');
 const statRead = document.getElementById('statRead');
 const statPending = document.getElementById('statPending');
 
-// 裝置模擬器元素
+// 設計器元素
+const designerCanvas = document.getElementById('designerCanvas');
+const designTitle = document.getElementById('designTitle');
+const designContent = document.getElementById('designContent');
+const designAuthor = document.getElementById('designAuthor');
+const emojiPicker = document.getElementById('emojiPicker');
+const colorPicker = document.getElementById('colorPicker');
+const templateSelector = document.getElementById('templateSelector');
+const designPhotoInput = document.getElementById('designPhotoInput');
+
+let selectedEmoji = "🌸";
+let selectedColor = "#dc2626";
+let uploadedPhoto = null;
+
+// 客廳實體裝置元素
 const deviceLed = document.getElementById('deviceLed');
 const ledLabel = document.getElementById('ledLabel');
 const pollCountdown = document.getElementById('pollCountdown');
+const epaperScreen = document.getElementById('epaperScreen');
 const epaperContent = document.getElementById('epaperContent');
 const epdClock = document.getElementById('epdClock');
+const epdModeBadge = document.getElementById('epdModeBadge');
+const epdEmoji = document.getElementById('epdEmoji');
+const epdTitle = document.getElementById('epdTitle');
+const epdDivider = document.getElementById('epdDivider');
+const epdText = document.getElementById('epdText');
+const epdFooter = document.getElementById('epdFooter');
+
 const refreshOverlay = document.getElementById('refreshOverlay');
+const refreshPhaseTitle = document.getElementById('refreshPhaseTitle');
 const refreshTimer = document.getElementById('refreshTimer');
 const btnDeviceConfirm = document.getElementById('btnDeviceConfirm');
 const buttonHint = document.getElementById('buttonHint');
+const btnSidePrev = document.getElementById('btnSidePrev');
+const btnSideNext = document.getElementById('btnSideNext');
 const simLogs = document.getElementById('simLogs');
 
-// 除錯與輔助測試按鈕
+// 頂部全域切換按鈕
+const btnModeColor = document.getElementById('btnModeColor');
+const btnModeTri = document.getElementById('btnModeTri');
 const btnQuickDemo = document.getElementById('btnQuickDemo');
 const btnTriggerPoll = document.getElementById('btnTriggerPoll');
 const btnTestBuzzer = document.getElementById('btnTestBuzzer');
 const btnResetAll = document.getElementById('btnResetAll');
-
-// 設計器元素
-const designTitle = document.getElementById('designTitle');
-const designContent = document.getElementById('designContent');
-const emojiPicker = document.getElementById('emojiPicker');
-const colorPicker = document.getElementById('colorPicker');
-let selectedEmoji = "❤️";
-let selectedColor = "#dc2626";
+const btnSimulateNfc = document.getElementById('btnSimulateNfc');
 
 // ==============================================================================
-// 1. Web Audio API 可愛蜂鳴器音效 (Cute Synthesized Buzzer)
+// 1. Web Audio API 音效引擎 (壓電蜂鳴音 ＋ 機械微動開關 Click 音)
 // ==============================================================================
 let audioCtx = null;
 
@@ -106,27 +128,23 @@ function getAudioContext() {
 }
 
 /**
- * 播放一次清脆可愛的「叮咚/嗶嗶」蜂鳴提示聲
- * 採用三音階升調 (C5 ➔ E5 ➔ G5)，溫暖悅耳
+ * 3V 壓電蜂鳴器可愛三重升調提示音 (C5 ➔ E5 ➔ G5)
  */
 function playCuteBuzzer() {
   try {
     const ctx = getAudioContext();
     const now = ctx.currentTime;
-    
-    // 定義三顆音符 (Hz): C5 (523.25), E5 (659.25), G5 (783.99)
-    const notes = [523.25, 659.25, 783.99];
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
 
     notes.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'sine'; // 正弦波，聲音最柔和可愛
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.12);
 
-      // 包絡線 (Envelope) 漸強漸弱
       gain.gain.setValueAtTime(0, now + idx * 0.12);
-      gain.gain.linearRampToValueAtTime(0.18, now + idx * 0.12 + 0.02);
+      gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.12 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.18);
 
       osc.connect(gain);
@@ -136,14 +154,37 @@ function playCuteBuzzer() {
       osc.stop(now + idx * 0.12 + 0.2);
     });
 
-    logSim('🔊 [蜂鳴器] 發出可愛的三重提示音 (提醒長輩看新訊息)');
-  } catch (err) {
-    console.warn('音訊播放受限:', err);
-  }
+    logSim('🔊 [3V 蜂鳴器] 發出可愛提示音，提醒長輩有新訊息！');
+  } catch (err) {}
 }
 
 /**
- * 刷新完成時播放短暫清脆的確認音 (Success Ding)
+ * 實體微動開關機械按壓 Click 音效
+ */
+function playSwitchClick() {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.04);
+
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.05);
+  } catch (err) {}
+}
+
+/**
+ * 刷新完成時的確認音 (Success Ding)
  */
 function playSuccessDing() {
   try {
@@ -152,28 +193,235 @@ function playSuccessDing() {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = 'triangle';
+    osc.type = 'sine';
     osc.frequency.setValueAtTime(880, now); // A5
 
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.35);
+    osc.stop(now + 0.4);
   } catch (err) {}
 }
 
-// 輔助日誌記錄
 function logSim(msg) {
   const time = new Date().toLocaleTimeString();
   simLogs.innerHTML = `[${time}] ${msg}<br>` + simLogs.innerHTML;
 }
 
 // ==============================================================================
-// 2. 5 分鐘自動輪詢機制 (5-Minute Polling Engine)
+// 2. 關懷卡 Canvas 視覺設計引擎 (App 端 400x600 即時渲染)
+// ==============================================================================
+
+function renderDesignerCanvas() {
+  if (!designerCanvas) return;
+  const ctx = designerCanvas.getContext('2d');
+  const w = designerCanvas.width;   // 400
+  const h = designerCanvas.height;  // 600
+
+  // 1. 底色與微米白紙感
+  ctx.fillStyle = '#fbfbf9';
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. 邊框裝飾 (採用選定之主題色)
+  ctx.strokeStyle = selectedColor;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(10, 10, w - 20, h - 20);
+
+  // 頂部彩條
+  ctx.fillStyle = selectedColor;
+  ctx.fillRect(10, 10, w - 20, 24);
+
+  // 品牌名稱
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Family E-Care · 關懷電子紙', 24, 27);
+
+  const clockStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  ctx.textAlign = 'right';
+  ctx.fillText(clockStr, w - 24, 27);
+
+  // 3. 繪製照片 (若有上傳)
+  let contentStartY = 280;
+  if (uploadedPhoto) {
+    const photoH = 180;
+    const photoW = w - 60;
+    ctx.drawImage(uploadedPhoto, 30, 60, photoW, photoH);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(30, 60, photoW, photoH);
+    contentStartY = 270;
+  } else {
+    // 若無照片，繪製大尺寸 Emoji 居中標誌
+    ctx.font = '64px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(selectedEmoji, w / 2, 140);
+  }
+
+  // 4. 繪製主標題
+  const titleText = designTitle.value.trim() || '家人關懷問候';
+  ctx.fillStyle = selectedColor;
+  ctx.font = 'bold 28px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(titleText, w / 2, uploadedPhoto ? contentStartY : 190);
+
+  // 分隔線
+  ctx.fillStyle = selectedColor;
+  const divY = uploadedPhoto ? contentStartY + 12 : 205;
+  ctx.fillRect(w / 2 - 35, divY, 70, 4);
+
+  // 5. 繪製關懷內文 (長輩友善大字體，支援自動折行)
+  const contentText = designContent.value.trim() || '祝奶奶天天開心，身體健康！';
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.textAlign = 'center';
+
+  const maxLineWidth = w - 60;
+  const startY = uploadedPhoto ? contentStartY + 45 : 250;
+  wrapCanvasText(ctx, contentText, w / 2, startY, maxLineWidth, 34);
+
+  // 6. 底部署名
+  const authorText = designAuthor.value.trim() || '兒女們敬上';
+  ctx.fillStyle = '#64748b';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`❤️ ${authorText}`, w / 2, h - 35);
+}
+
+// 輔助函式：Canvas 文字自動折行
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const chars = text.split('');
+  let line = '';
+  let currentY = y;
+
+  for (let i = 0; i < chars.length; i++) {
+    const testLine = line + chars[i];
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && i > 0) {
+      ctx.fillText(line, x, currentY);
+      line = chars[i];
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, currentY);
+}
+
+// 監聽設計器輸入變化，即時重繪 Canvas
+[designTitle, designContent, designAuthor].forEach(input => {
+  input.addEventListener('input', renderDesignerCanvas);
+});
+
+// Emoji 選擇切換
+emojiPicker.addEventListener('click', (e) => {
+  if (e.target.classList.contains('emoji-opt')) {
+    document.querySelectorAll('.emoji-opt').forEach(opt => opt.classList.remove('selected'));
+    e.target.classList.add('selected');
+    selectedEmoji = e.target.textContent;
+    renderDesignerCanvas();
+  }
+});
+
+// 主題色切換
+colorPicker.addEventListener('click', (e) => {
+  if (e.target.classList.contains('dot')) {
+    document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected'));
+    e.target.classList.add('selected');
+    selectedColor = e.target.getAttribute('data-color');
+    renderDesignerCanvas();
+  }
+});
+
+// 版型快速套用
+templateSelector.addEventListener('click', (e) => {
+  if (e.target.classList.contains('tpl-btn')) {
+    document.querySelectorAll('.tpl-btn').forEach(btn => btn.classList.remove('active'));
+    e.target.classList.add('active');
+    const tpl = e.target.getAttribute('data-tpl');
+
+    if (tpl === 'greeting') {
+      designTitle.value = '早安，奶奶！';
+      selectedEmoji = '🌸';
+      selectedColor = '#dc2626';
+      designContent.value = '今天外頭風大變冷了，出門散步記得穿上紅色厚外套，多喝熱水喔！';
+    } else if (tpl === 'medicine') {
+      designTitle.value = '飯後服藥叮嚀';
+      selectedEmoji = '💊';
+      selectedColor = '#d97706';
+      designContent.value = '晚餐後請服用胃藥與降血壓藥各一顆，配溫開水慢慢吞服，不要忘記囉！';
+    } else if (tpl === 'calendar') {
+      designTitle.value = '週四台大醫院回診';
+      selectedEmoji = '🏥';
+      selectedColor = '#2563eb';
+      designContent.value = '本週四上午 09:30 心臟內科門診，叔叔九點會開車到家門口接您。';
+    } else if (tpl === 'photo') {
+      designTitle.value = '小寶貝的週末生活';
+      selectedEmoji = '👧';
+      selectedColor = '#16a34a';
+      designContent.value = '小孫女這週末考完試，吵著要回去吃奶奶親手炸的年糕！';
+    }
+
+    // 更新 Emoji 選取狀態
+    document.querySelectorAll('.emoji-opt').forEach(opt => {
+      opt.classList.toggle('selected', opt.textContent === selectedEmoji);
+    });
+
+    // 更新顏色選取狀態
+    document.querySelectorAll('.dot').forEach(d => {
+      d.classList.toggle('selected', d.getAttribute('data-color') === selectedColor);
+    });
+
+    renderDesignerCanvas();
+  }
+});
+
+// 照片上傳處理
+designPhotoInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      uploadedPhoto = img;
+      renderDesignerCanvas();
+      logSim(`🖼️ [設計器] 照片載入成功: ${file.name}，已合成至 400x600 關懷卡。`);
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// 發送卡片按鈕
+document.getElementById('btnSendDesign').addEventListener('click', () => {
+  const title = designTitle.value.trim() || "家人關懷問候";
+  const content = designContent.value.trim();
+  if (!content) {
+    alert('請填寫祝福卡片內容！');
+    return;
+  }
+
+  queueNewMessage({
+    id: Date.now(),
+    type: "關懷卡片",
+    title: title,
+    emoji: selectedEmoji,
+    content: content,
+    color: selectedColor,
+    author: designAuthor.value.trim() || "兒女敬上"
+  });
+
+  alert('✨ 關懷卡片已透過 Wi-Fi 發送至客廳裝置！\n裝置將在 RTC 喚醒或收到推播時發出提示。');
+});
+
+// ==============================================================================
+// 3. 5 分鐘 RTC 定時喚醒機制 (Power-Saving Polling Engine)
 // ==============================================================================
 
 function startPollingEngine() {
@@ -185,7 +433,7 @@ function startPollingEngine() {
     pollTimeRemaining--;
     if (pollTimeRemaining <= 0) {
       pollTimeRemaining = POLL_INTERVAL_SECONDS;
-      checkNewMessagesOnServer(); // 5 分鐘時間到，執行輪詢
+      checkNewMessagesOnServer(); // 5 分鐘 RTC 喚醒
     }
     updateTimerDisplay();
   }, 1000);
@@ -197,55 +445,47 @@ function updateTimerDisplay() {
   pollCountdown.textContent = `${min}:${sec}`;
 }
 
-/**
- * 檢查是否有未讀新訊息
- */
 function checkNewMessagesOnServer() {
-  logSim('🔄 [5分鐘輪詢] 正在檢查雲端伺服器是否有新訊息...');
+  logSim('🔄 [RTC喚醒] MCU 自 Deep Sleep 喚醒，短暫開啟 Wi-Fi 查詢雲端訊息...');
 
   if (pendingMessage) {
-    // 發現有新訊息！觸發綠色 LED 閃爍與蜂鳴器提醒
     triggerDeviceAlert(pendingMessage);
   } else {
-    logSim('✅ [5分鐘輪詢] 檢查完畢，目前無待更新的新訊息。');
+    logSim('✅ [RTC檢查] 無新訊息，Wi-Fi 即刻關閉，重返低功耗休眠 (<15µA)。');
   }
 }
 
-/**
- * 觸發裝置通知：綠色 LED 閃爍 + 蜂鳴器響起 + 提示長輩按按鈕
- */
 function triggerDeviceAlert(msg) {
   deviceLed.classList.add('active-blink');
-  ledLabel.textContent = '🟢 有新訊息！(閃爍中)';
+  ledLabel.textContent = '🟢 收到新訊息！(閃爍中)';
   buttonHint.style.display = 'block';
   btnDeviceConfirm.classList.add('glowing');
 
-  // 發出一次可愛的蜂鳴聲提醒長輩
+  // 發出一聲可愛蜂鳴音
   playCuteBuzzer();
-  logSim(`🔔 [通知觸發] 綠色 LED 呼吸閃爍中！長輩請按下「閱讀/更新螢幕」按鈕。`);
+  logSim(`🔔 [通知觸發] 暖黃/綠色 LED 呼吸閃爍中！長輩請按壓實體「我看到了」按鈕。`);
 }
 
-/**
- * 恢復裝置待機狀態 (LED 熄滅)
- */
 function resetDeviceAlert() {
   deviceLed.classList.remove('active-blink');
-  ledLabel.textContent = '待機中 (無新訊息)';
+  ledLabel.textContent = '休眠待機中';
   buttonHint.style.display = 'none';
   btnDeviceConfirm.classList.remove('glowing');
 }
 
 // ==============================================================================
-// 3. 實體按鈕點擊與 3.8 秒擬真電子紙顆粒刷新 (Physical Button & 3.8s Flash)
+// 4. 客廳實體大按鈕 ＋ 3.8 秒分階段電子紙顆粒物理刷新
 // ==============================================================================
 
 btnDeviceConfirm.addEventListener('click', () => {
-  logSim('👆 [實體按鈕] 長輩按下了「閱讀 / 更新螢幕」按鈕！');
+  // 撥放實體開關 Click 音
+  playSwitchClick();
+  logSim('👆 [實體按鍵] 長輩按下了大顆「我看到了 / 收到」確認按鈕！');
   trigger3p8sRefresh();
 });
 
 /**
- * 執行 3.8 秒電子紙刷新程序
+ * 執行 3.8 秒電子紙物理偏轉刷新 (分 4 階段展示)
  */
 function trigger3p8sRefresh() {
   btnDeviceConfirm.disabled = true;
@@ -254,37 +494,41 @@ function trigger3p8sRefresh() {
   let remaining = 3.8;
   refreshTimer.textContent = `${remaining.toFixed(1)}s`;
 
-  // 0.1 秒刷新倒數數值
+  // 分階段說明
+  refreshPhaseTitle.textContent = '【階段 1】全黑清除 (Clear Black)...';
+
   const countTimer = setInterval(() => {
     remaining -= 0.1;
     if (remaining <= 0) {
       clearInterval(countTimer);
     } else {
       refreshTimer.textContent = `${remaining.toFixed(1)}s`;
+      if (remaining <= 3.0 && remaining > 2.2) {
+        refreshPhaseTitle.textContent = '【階段 2】全白清除 (Clear White)...';
+      } else if (remaining <= 2.2 && remaining > 1.0) {
+        refreshPhaseTitle.textContent = '【階段 3】彩色顆粒物理翻轉震盪...';
+      } else if (remaining <= 1.0) {
+        refreshPhaseTitle.textContent = '【階段 4】畫面靜態成型中...';
+      }
     }
   }, 100);
 
-  // 3.8 秒後完成刷新並呈現畫面
+  // 3.8 秒倒數結束，畫面呈現
   setTimeout(() => {
     refreshOverlay.classList.remove('active');
     btnDeviceConfirm.disabled = false;
 
-    // 若有等待中的新訊息，立即套用
     if (pendingMessage) {
-      applyMessageToScreen(pendingMessage);
-
-      // 更新訊息歷史狀態為已閱讀
+      applyMessageToDeviceScreen(pendingMessage);
       updateMessageStatusInHistory(pendingMessage.id, 'read');
-      logSim(`✨ [刷新完成] 3.8 秒顯示完成！新訊息已呈現於電子紙螢幕。`);
+      logSim(`✨ [刷新完成] 3.8 秒顯示完成！長輩已閱讀確認，已回傳 ACK 至雲端。`);
       
-      // 清除待更新佇列並恢復 LED
       pendingMessage = null;
       localStorage.removeItem(STORAGE_KEYS.PENDING);
       resetDeviceAlert();
     } else {
-      // 若無特定新訊息，輪播下一則日常關懷語
       cycleNextCarouselMessage();
-      logSim(`✨ [常態更新] 3.8 秒顯示完成，已切換下一則日常關懷訊息。`);
+      logSim(`✨ [常態更新] 3.8 秒顯示完成，已切換下一則日常關懷語。`);
     }
 
     playSuccessDing();
@@ -293,38 +537,34 @@ function trigger3p8sRefresh() {
 }
 
 /**
- * 將訊息繪製至電子紙螢幕 DOM
+ * 將訊息渲染至客廳電子紙螢幕 DOM
  */
-function applyMessageToScreen(msg) {
+function applyMessageToDeviceScreen(msg) {
   const clockStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   epdClock.textContent = clockStr;
 
-  let emoji = msg.emoji || "🌸";
-  let title = msg.title || "家人關懷問候";
-  let text = msg.content || msg.text || "";
-  let author = msg.author || "來自 兒女們的祝福";
-  let color = msg.color || "#dc2626";
-
-  epaperContent.innerHTML = `
-    <div class="epd-header-bar">
-      <span class="epd-brand">Family e-Care</span>
-      <span class="epd-time">${clockStr}</span>
-    </div>
-    <div class="epd-body">
-      <div class="epd-emoji-badge">${emoji}</div>
-      <h2 class="epd-title" style="color: ${color};">${title}</h2>
-      <div class="epd-divider" style="background: ${color};"></div>
-      <p class="epd-text">${text}</p>
-      <div class="epd-footer-info">
-        <span>❤️ ${author}</span>
-      </div>
-    </div>
-  `;
+  epdEmoji.textContent = msg.emoji || "🌸";
+  epdTitle.textContent = msg.title || "家人關懷問候";
+  epdTitle.style.color = (currentDisplayMode === 'tri') ? '#dc2626' : (msg.color || '#dc2626');
+  epdDivider.style.background = (currentDisplayMode === 'tri') ? '#dc2626' : (msg.color || '#dc2626');
+  epdText.textContent = msg.content || msg.text || "";
+  epdFooter.innerHTML = `<span>❤️ ${msg.author || '兒女敬上'}</span>`;
 }
 
-/**
- * 輪播切換下一則日常訊息
- */
+// 側邊換頁按鍵 (G-2 微動開關)
+btnSidePrev.addEventListener('click', () => {
+  playSwitchClick();
+  logSim('◀ [側邊按鈕] 長輩按下了「上一則」微動按鍵。');
+  trigger3p8sRefresh();
+});
+
+btnSideNext.addEventListener('click', () => {
+  playSwitchClick();
+  logSim('▶ [側邊按鈕] 長輩按下了「下一則」微動按鍵。');
+  trigger3p8sRefresh();
+});
+
+// 輪換下一則日常訊息
 function cycleNextCarouselMessage() {
   if (carouselItems.length === 0) return;
   const currentIdx = carouselItems.findIndex(item => item.active);
@@ -337,7 +577,7 @@ function cycleNextCarouselMessage() {
   renderCarouselList();
 
   const nextMsg = carouselItems[nextIdx];
-  applyMessageToScreen({
+  applyMessageToDeviceScreen({
     emoji: "🌸",
     title: "每日溫馨關懷",
     content: nextMsg.text,
@@ -347,10 +587,9 @@ function cycleNextCarouselMessage() {
 }
 
 // ==============================================================================
-// 4. App 介面切換與各模組管理 (App Features)
+// 5. App 分頁與各模組管理 (App Features)
 // ==============================================================================
 
-// App 分頁標籤切換
 tabButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     tabButtons.forEach(b => b.classList.remove('active'));
@@ -359,10 +598,14 @@ tabButtons.forEach(btn => {
     btn.classList.add('active');
     const targetId = btn.getAttribute('data-tab');
     document.getElementById(targetId).classList.add('active');
+
+    if (targetId === 'tab-designer') {
+      renderDesignerCanvas();
+    }
   });
 });
 
-// --- 功能 1: 輪播訊息 ---
+// --- 輪播訊息管理 ---
 function renderCarouselList() {
   carouselList.innerHTML = '';
   carouselItems.forEach(item => {
@@ -371,7 +614,7 @@ function renderCarouselList() {
     el.innerHTML = `
       <div class="msg-content">
         <p class="msg-text">${item.text}</p>
-        <div class="msg-meta">${item.active ? '🟢 目前播送中' : '⚪ 待輪播'} · 時間: ${item.time}</div>
+        <div class="msg-meta">${item.active ? '🟢 目前客廳播送中' : '⚪ 待輪播'} · 時間: ${item.time}</div>
       </div>
       <div class="msg-actions">
         <button class="btn btn-sm btn-secondary" onclick="setCarouselActive(${item.id})">播送</button>
@@ -418,16 +661,16 @@ document.getElementById('btnAddCarousel').addEventListener('click', () => {
   localStorage.setItem(STORAGE_KEYS.CAROUSEL, JSON.stringify(carouselItems));
   input.value = '';
   renderCarouselList();
-  alert('已成功新增至客廳輪播清單！');
+  alert('已成功加入客廳輪播清單！');
 });
 
-// --- 功能 2: 排程訊息 ---
+// --- 排程訊息管理 ---
 function renderScheduleList() {
   scheduleList.innerHTML = '';
   scheduleItems.forEach(item => {
     const el = document.createElement('div');
     el.className = 'msg-item';
-    let icon = item.category === 'med' ? '💊' : (item.category === 'clinic' ? '🏥' : '⏰');
+    let icon = item.category === 'med' ? '💊' : (item.category === 'clinic' ? '🏥' : (item.category === 'water' ? '💧' : '⏰'));
     el.innerHTML = `
       <div class="msg-content">
         <p class="msg-text"><strong>${icon} ${item.title}</strong> (${item.time})</p>
@@ -454,7 +697,7 @@ window.triggerScheduleNow = function(id) {
     color: "#dc2626",
     author: "智慧家庭排程系統"
   });
-  alert(`已將排程提醒「${item.title}」推送至客廳裝置！`);
+  alert(`已將排程「${item.title}」推播至客廳裝置！`);
 };
 
 document.getElementById('btnAddSchedule').addEventListener('click', () => {
@@ -464,7 +707,7 @@ document.getElementById('btnAddSchedule').addEventListener('click', () => {
   const content = document.getElementById('scheduleContent').value.trim();
 
   if (!title || !content) {
-    alert('請填寫完整的排程標題與內容！');
+    alert('請填寫完整的提醒標題與說明！');
     return;
   }
 
@@ -478,49 +721,12 @@ document.getElementById('btnAddSchedule').addEventListener('click', () => {
   scheduleItems.push(newSched);
   localStorage.setItem(STORAGE_KEYS.SCHEDULE, JSON.stringify(scheduleItems));
   renderScheduleList();
-  alert('已建立排程！系統將在指定時段提醒長輩。');
+  alert('已建立排程！系統將在指定時段由硬體蜂鳴音提醒長輩。');
   document.getElementById('scheduleTitle').value = '';
   document.getElementById('scheduleContent').value = '';
 });
 
-// --- 功能 3: 圖像設計器 (Emoji + 文字 + Spectra 6) ---
-emojiPicker.addEventListener('click', (e) => {
-  if (e.target.classList.contains('emoji-opt')) {
-    document.querySelectorAll('.emoji-opt').forEach(opt => opt.classList.remove('selected'));
-    e.target.classList.add('selected');
-    selectedEmoji = e.target.textContent;
-  }
-});
-
-colorPicker.addEventListener('click', (e) => {
-  if (e.target.classList.contains('dot')) {
-    document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected'));
-    e.target.classList.add('selected');
-    selectedColor = e.target.getAttribute('data-color');
-  }
-});
-
-document.getElementById('btnSendDesign').addEventListener('click', () => {
-  const title = designTitle.value.trim() || "關懷卡片";
-  const content = designContent.value.trim();
-  if (!content) {
-    alert('請填寫祝福卡片內容！');
-    return;
-  }
-
-  queueNewMessage({
-    id: Date.now(),
-    type: "圖像卡片",
-    title: title,
-    emoji: selectedEmoji,
-    content: content,
-    color: selectedColor,
-    author: "孫子女親筆卡片"
-  });
-  alert('✨ 關懷卡片已發送至客廳裝置！裝置將在輪詢時發出提示。');
-});
-
-// --- 功能 4: 訊息資料庫歷史與狀態追蹤 ---
+// --- 訊息資料庫歷史表格 ---
 function renderHistoryTable() {
   historyTableBody.innerHTML = '';
   let readCount = 0;
@@ -535,10 +741,10 @@ function renderHistoryTable() {
     tr.innerHTML = `
       <td>${item.time.split(' ')[1] || item.time}</td>
       <td><span class="tag">${item.type}</span></td>
-      <td>${item.content.substring(0, 24)}...</td>
+      <td>${item.content.substring(0, 20)}...</td>
       <td>
         <span class="badge-status ${isRead ? 'read' : 'pending'}">
-          ${isRead ? '✅ 已按鈕確認' : '⏳ 等待長輩閱讀'}
+          ${isRead ? '✅ 已按鍵確認' : '⏳ 等待長輩閱讀'}
         </span>
       </td>
     `;
@@ -559,12 +765,11 @@ function updateMessageStatusInHistory(id, newStatus) {
   }
 }
 
-// --- 功能 5: 佇列新訊息到伺服器 ---
+// 佇列新訊息到伺服器
 function queueNewMessage(msg) {
   pendingMessage = msg;
   localStorage.setItem(STORAGE_KEYS.PENDING, JSON.stringify(pendingMessage));
 
-  // 加入歷史紀錄 (預設狀態: pending 等待長輩按按鈕)
   const historyEntry = {
     id: msg.id,
     time: new Date().toLocaleString(),
@@ -577,52 +782,47 @@ function queueNewMessage(msg) {
   localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(historyItems));
   renderHistoryTable();
 
-  logSim(`📤 [App發送] 遠端上傳新訊息成功:「${msg.content.substring(0, 16)}...」已進入雲端待讀取佇列。`);
+  logSim(`📤 [App發送] 遠端傳送新訊息:「${msg.content.substring(0, 16)}...」已上傳至雲端。`);
 
-  // 若使用者點擊快捷展示或測試，立即觸發提醒
+  // 立即觸發裝置提示
   triggerDeviceAlert(pendingMessage);
 }
 
-// --- 功能 6: 設定儲存與 NFC 模擬一碰配網 ---
-document.getElementById('btnSaveConfig').addEventListener('click', () => {
+// 模擬 NFC 一碰配網
+btnSimulateNfc.addEventListener('click', () => {
   const ssid = document.getElementById('cfgWifiSsid').value;
-  alert(`Wi-Fi 連線設定「${ssid}」已儲存，並同步更新至裝置 EC-8823！`);
-  logSim(`⚙️ [設定更新] 裝置 Wi-Fi 配網成功: SSID=${ssid}`);
+  playCuteBuzzer();
+  alert(`📱 [NFC 觸碰成功] 手機已透過 NFC NDEF 將 Wi-Fi 設定（SSID: ${ssid}）快速寫入客廳裝置！\n日常遠端訊息將由 Wi-Fi 負責接收。`);
+  logSim(`🏷️ [NFC配網] 手機一碰配網成功: 寫入 Wi-Fi (${ssid})，裝置已連上家用路由器。`);
 });
 
-const btnSimulateNfc = document.getElementById('btnSimulateNfc');
-if (btnSimulateNfc) {
-  btnSimulateNfc.addEventListener('click', () => {
-    const ssid = document.getElementById('cfgWifiSsid').value;
-    playCuteBuzzer();
-    alert(`📱 [NFC 觸碰成功] 手機已透過 NFC NDEF 將 Wi-Fi 設定（SSID: ${ssid}）快速寫入客廳裝置！\n日常遠端訊息將由 Wi-Fi 負責接收。`);
-    logSim(`🏷️ [NFC配網] 手機一碰配網成功: 寫入 Wi-Fi (${ssid})，裝置已連上家用路由器。`);
-  });
-}
-
-// --- 側邊微動按鈕 (G-2): 上一則 / 下一則手動翻頁 ---
-const btnSidePrev = document.getElementById('btnSidePrev');
-const btnSideNext = document.getElementById('btnSideNext');
-
-if (btnSidePrev) {
-  btnSidePrev.addEventListener('click', () => {
-    logSim('◀ [側邊按鈕] 長輩按下了側邊「上一則」微動按鍵。');
-    trigger3p8sRefresh();
-  });
-}
-
-if (btnSideNext) {
-  btnSideNext.addEventListener('click', () => {
-    logSim('▶ [側邊按鈕] 長輩按下了側邊「下一則」微動按鍵。');
-    trigger3p8sRefresh();
-  });
-}
-
 // ==============================================================================
-// 5. 測試面板與快速模擬 (Demo Helpers)
+// 6. 全彩 (Gallery Palette/ACeP) 與 黑紅白三色 (BWR) 色域模式切換
 // ==============================================================================
 
-// 頂部快捷模擬新訊息推播
+function setDisplayMode(mode) {
+  currentDisplayMode = mode;
+  localStorage.setItem(STORAGE_KEYS.DISPLAY_MODE, mode);
+
+  if (mode === 'tri') {
+    btnModeTri.classList.add('active');
+    btnModeColor.classList.remove('active');
+    epaperScreen.classList.add('tri-color-mode');
+    epdModeBadge.textContent = '黑紅白 4.2"';
+    logSim('🎨 [色域切換] 已切換為 4.2 吋黑紅白三色 (BWR) 模擬模式。');
+  } else {
+    btnModeColor.classList.add('active');
+    btnModeTri.classList.remove('active');
+    epaperScreen.classList.remove('tri-color-mode');
+    epdModeBadge.textContent = '全彩 4.01"';
+    logSim('🎨 [色域切換] 已切換為 4.01 吋全彩 (Gallery Palette/ACeP) 模擬模式。');
+  }
+}
+
+btnModeColor.addEventListener('click', () => setDisplayMode('color'));
+btnModeTri.addEventListener('click', () => setDisplayMode('tri'));
+
+// 快捷模擬按鈕
 btnQuickDemo.addEventListener('click', () => {
   const sampleMessages = [
     { title: "降血壓藥吃囉！", emoji: "💊", text: "奶奶，現在是吃晚藥時間，請配溫開水吃一顆喔！", color: "#dc2626" },
@@ -642,18 +842,15 @@ btnQuickDemo.addEventListener('click', () => {
   });
 });
 
-// 立即觸發 5 分鐘輪詢
 btnTriggerPoll.addEventListener('click', () => {
-  logSim('⚡ [手動測試] 立即執行 5 分鐘輪詢...');
+  logSim('⚡ [手動測試] 立即觸發 5 分鐘 RTC 喚醒輪詢...');
   checkNewMessagesOnServer();
 });
 
-// 試聽可愛蜂鳴聲
 btnTestBuzzer.addEventListener('click', () => {
   playCuteBuzzer();
 });
 
-// 重設所有模擬資料
 btnResetAll.addEventListener('click', () => {
   if (confirm('確定要清空所有模擬資料並恢復出廠預設嗎？')) {
     localStorage.clear();
@@ -662,15 +859,16 @@ btnResetAll.addEventListener('click', () => {
 });
 
 // ==============================================================================
-// 6. 頁面初始化
+// 7. 系統開機初始化
 // ==============================================================================
 window.addEventListener('DOMContentLoaded', () => {
   renderCarouselList();
   renderScheduleList();
   renderHistoryTable();
+  renderDesignerCanvas();
+  setDisplayMode(currentDisplayMode);
   startPollingEngine();
 
-  // 若開機時已有等待中的訊息
   if (pendingMessage) {
     triggerDeviceAlert(pendingMessage);
   }
