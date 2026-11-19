@@ -1,15 +1,15 @@
 // ==============================================================================
 // Family E-Care — 智慧家庭遠端關懷電子紙系統 Prototype 核心邏輯
-// 深度優化：App 關懷卡視覺設計器 (手寫簽名+短語庫) ＋ 客廳電子紙擬真顯示
+// 深度優化：旗艦級 UI/UX、動態島即時連動 ＋ 客廳 4~6 吋電子紙擬真顯示
 // ==============================================================================
 
 // 預設資料儲存鍵值
 const STORAGE_KEYS = {
-  CAROUSEL: 'family_ecare_carousel_v3',
-  SCHEDULE: 'family_ecare_schedule_v3',
-  HISTORY: 'family_ecare_history_v3',
-  PENDING: 'family_ecare_pending_v3',
-  DISPLAY_MODE: 'family_ecare_display_mode_v3'
+  CAROUSEL: 'family_ecare_carousel_v4',
+  SCHEDULE: 'family_ecare_schedule_v4',
+  HISTORY: 'family_ecare_history_v4',
+  PENDING: 'family_ecare_pending_v4',
+  DISPLAY_MODE: 'family_ecare_display_mode_v4'
 };
 
 // 預設初始資料
@@ -56,7 +56,7 @@ let pollTimeRemaining = POLL_INTERVAL_SECONDS;
 let pollTimerInterval = null;
 
 // App 介面元素快取
-const tabButtons = document.querySelectorAll('.tab-btn');
+const bottomNavItems = document.querySelectorAll('.nav-tab-item');
 const tabContents = document.querySelectorAll('.tab-content');
 const carouselList = document.getElementById('carouselList');
 const scheduleList = document.getElementById('scheduleList');
@@ -64,9 +64,10 @@ const historyTableBody = document.getElementById('historyTableBody');
 const statTotal = document.getElementById('statTotal');
 const statRead = document.getElementById('statRead');
 const statPending = document.getElementById('statPending');
-const appPushToast = document.getElementById('appPushToast');
-const toastTitle = document.getElementById('toastTitle');
-const toastDesc = document.getElementById('toastDesc');
+
+// 動態島與通知元素
+const dynamicIsland = document.getElementById('dynamicIsland');
+const diDesc = document.getElementById('diDesc');
 
 // 設計器元素
 const designerCanvas = document.getElementById('designerCanvas');
@@ -80,7 +81,7 @@ const quickPhrases = document.getElementById('quickPhrases');
 const fontSizeSelector = document.getElementById('fontSizeSelector');
 const designPhotoInput = document.getElementById('designPhotoInput');
 
-// 手寫簽名板元素
+// 手寫簽名板
 const signatureCanvas = document.getElementById('signatureCanvas');
 const btnClearSignature = document.getElementById('btnClearSignature');
 let isDrawing = false;
@@ -88,7 +89,7 @@ let hasSignature = false;
 
 let selectedEmoji = "🌸";
 let selectedColor = "#dc2626";
-let currentFontSize = 24; // 預設特大字體 24px
+let currentFontSize = 24;
 let uploadedPhoto = null;
 
 // 客廳實體裝置元素
@@ -154,7 +155,7 @@ function playCuteBuzzer() {
       osc.frequency.setValueAtTime(freq, now + idx * 0.12);
 
       gain.gain.setValueAtTime(0, now + idx * 0.12);
-      gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.12 + 0.02);
+      gain.gain.linearRampToValueAtTime(0.22, now + idx * 0.12 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.18);
 
       osc.connect(gain);
@@ -164,7 +165,7 @@ function playCuteBuzzer() {
       osc.stop(now + idx * 0.12 + 0.2);
     });
 
-    logSim('🔊 [3V 蜂鳴器] 發出可愛三重提示音，提醒長輩看新訊息！');
+    logSim('🔊 [3V 蜂鳴器] 發出可愛三重升調提示音，提醒長輩看新訊息！');
   } catch (err) {}
 }
 
@@ -179,7 +180,7 @@ function playSwitchClick() {
     osc.frequency.setValueAtTime(140, now);
     osc.frequency.exponentialRampToValueAtTime(30, now + 0.04);
 
-    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.setValueAtTime(0.4, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
     osc.connect(gain);
@@ -200,14 +201,14 @@ function playSuccessDing() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(880, now);
 
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.4);
+    osc.stop(now + 0.45);
   } catch (err) {}
 }
 
@@ -216,18 +217,17 @@ function logSim(msg) {
   simLogs.innerHTML = `[${time}] ${msg}<br>` + simLogs.innerHTML;
 }
 
-// 彈出手機端長輩已讀通知
-function showAppPushToast(title, desc) {
-  toastTitle.textContent = title;
-  toastDesc.textContent = desc;
-  appPushToast.classList.add('show');
+// 觸發 iPhone 16 Pro 動態島 (Dynamic Island) 展開動畫
+function triggerDynamicIslandExpand(title, desc) {
+  diDesc.textContent = desc;
+  dynamicIsland.classList.add('expanded');
   setTimeout(() => {
-    appPushToast.classList.remove('show');
-  }, 4500);
+    dynamicIsland.classList.remove('expanded');
+  }, 4800);
 }
 
 // ==============================================================================
-// 2. 子女手繪簽名板 (Canvas Handwriting / Signature)
+// 2. 子女手繪簽名板 (Canvas Signature)
 // ==============================================================================
 
 function initSignatureCanvas() {
@@ -247,7 +247,7 @@ function initSignatureCanvas() {
   function endPos() {
     isDrawing = false;
     ctx.beginPath();
-    renderDesignerCanvas(); // 手寫筆畫更新時即時重繪至大卡片中
+    renderDesignerCanvas();
   }
 
   function getCanvasPos(e) {
@@ -296,32 +296,32 @@ function renderDesignerCanvas() {
   const h = designerCanvas.height;  // 600
 
   // 1. 底色與微米白紙感
-  ctx.fillStyle = '#fbfbf9';
+  ctx.fillStyle = '#faf8f5';
   ctx.fillRect(0, 0, w, h);
 
-  // 2. 邊框裝飾
+  // 2. 邊框裝飾 (採用選定之主題色)
   ctx.strokeStyle = selectedColor;
   ctx.lineWidth = 8;
-  ctx.strokeRect(10, 10, w - 20, h - 20);
+  ctx.strokeRect(12, 12, w - 24, h - 24);
 
   // 頂部彩條
   ctx.fillStyle = selectedColor;
-  ctx.fillRect(10, 10, w - 20, 24);
+  ctx.fillRect(12, 12, w - 24, 26);
 
   // 品牌名稱
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = 'bold 13px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('Family E-Care · 關懷電子紙', 24, 27);
+  ctx.fillText('Family E-Care · 關懷電子紙', 26, 29);
 
   const clockStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   ctx.textAlign = 'right';
-  ctx.fillText(clockStr, w - 24, 27);
+  ctx.fillText(clockStr, w - 26, 29);
 
   // 3. 繪製照片 (若有上傳)
   let contentStartY = 280;
   if (uploadedPhoto) {
-    const photoH = 170;
+    const photoH = 175;
     const photoW = w - 60;
     ctx.drawImage(uploadedPhoto, 30, 56, photoW, photoH);
     ctx.strokeStyle = '#cbd5e1';
@@ -347,7 +347,7 @@ function renderDesignerCanvas() {
   const divY = uploadedPhoto ? contentStartY + 12 : 200;
   ctx.fillRect(w / 2 - 35, divY, 70, 4);
 
-  // 5. 繪製關懷內文 (依字體大小動態調整行高)
+  // 5. 繪製關懷內文
   const contentText = designContent.value.trim() || '祝奶奶天天開心，身體健康！';
   ctx.fillStyle = '#0f172a';
   ctx.font = `bold ${currentFontSize}px sans-serif`;
@@ -358,7 +358,7 @@ function renderDesignerCanvas() {
   const startY = uploadedPhoto ? contentStartY + 45 : 245;
   wrapCanvasText(ctx, contentText, w / 2, startY, maxLineWidth, lineHeight);
 
-  // 6. 親筆手寫簽名合成 (若有簽名則畫於底部，否則顯示純文字作者)
+  // 6. 親筆手寫簽名合成
   if (hasSignature && signatureCanvas) {
     const sigW = 180;
     const sigH = 45;
@@ -401,8 +401,8 @@ function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
 
 // 長輩字體大小選擇器切換
 fontSizeSelector.addEventListener('click', (e) => {
-  if (e.target.classList.contains('font-btn')) {
-    document.querySelectorAll('.font-btn').forEach(btn => btn.classList.remove('active'));
+  if (e.target.classList.contains('font-chip')) {
+    document.querySelectorAll('.font-chip').forEach(btn => btn.classList.remove('active'));
     e.target.classList.add('active');
     currentFontSize = parseInt(e.target.getAttribute('data-size'), 10);
     renderDesignerCanvas();
@@ -411,9 +411,10 @@ fontSizeSelector.addEventListener('click', (e) => {
 
 // 常用短語庫一鍵填寫
 quickPhrases.addEventListener('click', (e) => {
-  if (e.target.classList.contains('pill')) {
-    const text = e.target.getAttribute('data-text');
-    const title = e.target.getAttribute('data-title');
+  const bubble = e.target.closest('.bubble');
+  if (bubble) {
+    const text = bubble.getAttribute('data-text');
+    const title = bubble.getAttribute('data-title');
     designContent.value = text;
     designTitle.value = title;
     renderDesignerCanvas();
@@ -422,8 +423,8 @@ quickPhrases.addEventListener('click', (e) => {
 
 // Emoji 切換
 emojiPicker.addEventListener('click', (e) => {
-  if (e.target.classList.contains('emoji-opt')) {
-    document.querySelectorAll('.emoji-opt').forEach(opt => opt.classList.remove('selected'));
+  if (e.target.classList.contains('emoji-circle')) {
+    document.querySelectorAll('.emoji-circle').forEach(opt => opt.classList.remove('selected'));
     e.target.classList.add('selected');
     selectedEmoji = e.target.textContent;
     renderDesignerCanvas();
@@ -432,8 +433,8 @@ emojiPicker.addEventListener('click', (e) => {
 
 // 顏色切換
 colorPicker.addEventListener('click', (e) => {
-  if (e.target.classList.contains('dot')) {
-    document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected'));
+  if (e.target.classList.contains('color-swatch')) {
+    document.querySelectorAll('.color-swatch').forEach(d => d.classList.remove('selected'));
     e.target.classList.add('selected');
     selectedColor = e.target.getAttribute('data-color');
     renderDesignerCanvas();
@@ -442,10 +443,11 @@ colorPicker.addEventListener('click', (e) => {
 
 // 版型快速套用
 templateSelector.addEventListener('click', (e) => {
-  if (e.target.classList.contains('tpl-btn')) {
-    document.querySelectorAll('.tpl-btn').forEach(btn => btn.classList.remove('active'));
-    e.target.classList.add('active');
-    const tpl = e.target.getAttribute('data-tpl');
+  const chip = e.target.closest('.chip-btn');
+  if (chip) {
+    document.querySelectorAll('.chip-btn').forEach(btn => btn.classList.remove('active'));
+    chip.classList.add('active');
+    const tpl = chip.getAttribute('data-tpl');
 
     if (tpl === 'greeting') {
       designTitle.value = '早安，奶奶！';
@@ -469,11 +471,11 @@ templateSelector.addEventListener('click', (e) => {
       designContent.value = '小孫女這週末考完試，吵著要回去吃奶奶親手炸的年糕！';
     }
 
-    document.querySelectorAll('.emoji-opt').forEach(opt => {
+    document.querySelectorAll('.emoji-circle').forEach(opt => {
       opt.classList.toggle('selected', opt.textContent === selectedEmoji);
     });
 
-    document.querySelectorAll('.dot').forEach(d => {
+    document.querySelectorAll('.color-swatch').forEach(d => {
       d.classList.toggle('selected', d.getAttribute('data-color') === selectedColor);
     });
 
@@ -518,7 +520,7 @@ document.getElementById('btnSendDesign').addEventListener('click', () => {
     author: designAuthor.value.trim() || "兒女敬上"
   });
 
-  alert('✨ 關懷卡片已透過 Wi-Fi 發送至客廳裝置！\n裝置將在 RTC 喚醒或收到推播時發出提示。');
+  alert('✨ 關懷卡片已透過 Wi-Fi 發送至客廳裝置！\n客廳 E-Care 將在 RTC 喚醒或收到推播時發出提示。');
 });
 
 // ==============================================================================
@@ -558,7 +560,7 @@ function checkNewMessagesOnServer() {
 
 function triggerDeviceAlert(msg) {
   deviceLed.classList.add('active-blink');
-  ledLabel.textContent = '🟢 收到新訊息！(閃爍中)';
+  ledLabel.textContent = '🟢 收到新訊息！';
   buttonHint.style.display = 'block';
   btnDeviceConfirm.classList.add('glowing');
 
@@ -600,9 +602,9 @@ function trigger3p8sRefresh() {
       if (remaining <= 3.0 && remaining > 2.2) {
         refreshPhaseTitle.textContent = '【階段 2】全白清除 (Clear White)...';
       } else if (remaining <= 2.2 && remaining > 1.0) {
-        refreshPhaseTitle.textContent = '【階段 3】彩色顆粒物理翻轉震盪...';
+        refreshPhaseTitle.textContent = '【階段 3】彩色微膠囊顆粒震盪翻轉...';
       } else if (remaining <= 1.0) {
-        refreshPhaseTitle.textContent = '【階段 4】畫面靜態成型中...';
+        refreshPhaseTitle.textContent = '【階段 4】畫面靜態成型...';
       }
     }
   }, 100);
@@ -616,9 +618,9 @@ function trigger3p8sRefresh() {
       updateMessageStatusInHistory(pendingMessage.id, 'read');
       logSim(`✨ [刷新完成] 3.8 秒顯示完成！長輩已閱讀確認，已回傳 ACK 至雲端。`);
       
-      // 子女端手機同步收到長輩已讀通知彈窗！
+      // 子女手機動態島 (Dynamic Island) 展開通知！
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      showAppPushToast(`奶奶於 ${timeStr} 按下了「我看到了」！`, `客廳 E-Care 電子紙已完成 3.8s 刷新，安心確認。`);
+      triggerDynamicIslandExpand(`奶奶已收到確認`, `奶奶於 ${timeStr} 按下了「我看到了」！`);
 
       pendingMessage = null;
       localStorage.removeItem(STORAGE_KEYS.PENDING);
@@ -658,7 +660,6 @@ btnSideNext.addEventListener('click', () => {
   trigger3p8sRefresh();
 });
 
-// 輪換下一則日常訊息
 function cycleNextCarouselMessage() {
   if (carouselItems.length === 0) return;
   const currentIdx = carouselItems.findIndex(item => item.active);
@@ -681,16 +682,16 @@ function cycleNextCarouselMessage() {
 }
 
 // ==============================================================================
-// 6. App 分頁導覽與模組管理
+// 6. App 底部浮動標籤導航切換
 // ==============================================================================
 
-tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tabButtons.forEach(b => b.classList.remove('active'));
+bottomNavItems.forEach(item => {
+  item.addEventListener('click', () => {
+    bottomNavItems.forEach(b => b.classList.remove('active'));
     tabContents.forEach(c => c.classList.remove('active'));
     
-    btn.classList.add('active');
-    const targetId = btn.getAttribute('data-tab');
+    item.classList.add('active');
+    const targetId = item.getAttribute('data-tab');
     document.getElementById(targetId).classList.add('active');
 
     if (targetId === 'tab-designer') {
@@ -704,14 +705,14 @@ function renderCarouselList() {
   carouselList.innerHTML = '';
   carouselItems.forEach(item => {
     const el = document.createElement('div');
-    el.className = `msg-item ${item.active ? 'active-item' : ''}`;
+    el.className = `feed-item-card ${item.active ? 'active-now' : ''}`;
     el.innerHTML = `
-      <div class="msg-content">
-        <p class="msg-text">${item.text}</p>
-        <div class="msg-meta">${item.active ? '🟢 目前客廳播送中' : '⚪ 待輪播'} · 時間: ${item.time}</div>
+      <div class="card-main-col">
+        <p class="card-main-text">${item.text}</p>
+        <div class="card-sub-info">${item.active ? '🟢 目前客廳播送中' : '⚪ 待輪播'} · 時間: ${item.time}</div>
       </div>
-      <div class="msg-actions">
-        <button class="btn btn-sm btn-secondary" onclick="setCarouselActive(${item.id})">播送</button>
+      <div class="card-action-col">
+        <button class="btn-sm-bench" onclick="setCarouselActive(${item.id})">播送</button>
       </div>
     `;
     carouselList.appendChild(el);
@@ -763,15 +764,15 @@ function renderScheduleList() {
   scheduleList.innerHTML = '';
   scheduleItems.forEach(item => {
     const el = document.createElement('div');
-    el.className = 'msg-item';
+    el.className = 'feed-item-card';
     let icon = item.category === 'med' ? '💊' : (item.category === 'clinic' ? '🏥' : (item.category === 'water' ? '💧' : '⏰'));
     el.innerHTML = `
-      <div class="msg-content">
-        <p class="msg-text"><strong>${icon} ${item.title}</strong> (${item.time})</p>
-        <p class="msg-meta">${item.content}</p>
+      <div class="card-main-col">
+        <p class="card-main-text"><strong>${icon} ${item.title}</strong> (${item.time})</p>
+        <p class="card-sub-info">${item.content}</p>
       </div>
-      <div class="msg-actions">
-        <button class="btn btn-sm btn-primary" onclick="triggerScheduleNow(${item.id})">立即推播</button>
+      <div class="card-action-col">
+        <button class="btn-sm-bench" style="color: #2563eb;" onclick="triggerScheduleNow(${item.id})">立即推播</button>
       </div>
     `;
     scheduleList.appendChild(el);
@@ -820,7 +821,7 @@ document.getElementById('btnAddSchedule').addEventListener('click', () => {
   document.getElementById('scheduleContent').value = '';
 });
 
-// --- 訊息資料庫歷史表格 ---
+// --- 訊息庫時間軸 Feed 渲染 ---
 function renderHistoryTable() {
   historyTableBody.innerHTML = '';
   let readCount = 0;
@@ -830,19 +831,19 @@ function renderHistoryTable() {
     if (item.status === 'read') readCount++;
     else pendingCount++;
 
-    const tr = document.createElement('tr');
+    const card = document.createElement('div');
+    card.className = 'timeline-event-card';
     const isRead = item.status === 'read';
-    tr.innerHTML = `
-      <td>${item.time.split(' ')[1] || item.time}</td>
-      <td><span class="tag">${item.type}</span></td>
-      <td>${item.content.substring(0, 20)}...</td>
-      <td>
-        <span class="badge-status ${isRead ? 'read' : 'pending'}">
-          ${isRead ? '✅ 已按鍵確認' : '⏳ 等待長輩閱讀'}
+    card.innerHTML = `
+      <div class="event-top-row">
+        <span class="event-time-tag">🕒 ${item.time} · ${item.type}</span>
+        <span class="event-status-pill ${isRead ? 'read' : 'pending'}">
+          ${isRead ? '✅ 長輩已按鍵確認' : '⏳ 等待長輩閱讀'}
         </span>
-      </td>
+      </div>
+      <p class="event-body-text">${item.content}</p>
     `;
-    historyTableBody.appendChild(tr);
+    historyTableBody.appendChild(card);
   });
 
   statTotal.textContent = historyItems.length;
@@ -865,7 +866,7 @@ function queueNewMessage(msg) {
 
   const historyEntry = {
     id: msg.id,
-    time: new Date().toLocaleString(),
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     type: msg.type,
     content: msg.content,
     status: 'pending',
@@ -899,13 +900,13 @@ function setDisplayMode(mode) {
     btnModeTri.classList.add('active');
     btnModeColor.classList.remove('active');
     epaperScreen.classList.add('tri-color-mode');
-    epdModeBadge.textContent = '黑紅白 4.2"';
+    epdModeBadge.textContent = '4.2" 黑紅白';
     logSim('🎨 [色域切換] 已切換為 4.2 吋黑紅白三色 (BWR) 模擬模式。');
   } else {
     btnModeColor.classList.add('active');
     btnModeTri.classList.remove('active');
     epaperScreen.classList.remove('tri-color-mode');
-    epdModeBadge.textContent = '全彩 4.01"';
+    epdModeBadge.textContent = '4.01" 全彩';
     logSim('🎨 [色域切換] 已切換為 4.01 吋全彩 (Gallery Palette/ACeP) 模擬模式。');
   }
 }
@@ -918,7 +919,7 @@ btnZoomToggle.addEventListener('click', () => {
   epaperScreen.classList.toggle('pixel-zoom-mode');
   const isZoom = epaperScreen.classList.contains('pixel-zoom-mode');
   btnZoomToggle.classList.toggle('active', isZoom);
-  logSim(isZoom ? '🔍 [特寫檢視] 已開啟電子紙微米紙紋與顆粒漫反射模擬。' : '🔍 [標準檢視] 恢復標準縮放比例。');
+  logSim(isZoom ? '🔍 [特寫檢視] 已開啟電子紙微米紙紋與漫反射特寫。' : '🔍 [標準檢視] 恢復標準縮放比例。');
 });
 
 // 快捷模擬推播按鈕
