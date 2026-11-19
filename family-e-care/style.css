@@ -12,11 +12,11 @@
   --paper-bg: #fbf9f5;          /* 模擬電子紙天然微米無眩光米白紙底 */
   --paper-border: #d1d5db;      /* 電子紙邊框灰 */
 
-  /* --- 現代控制台現代品牌色調 (Deep Slate & Calm Blue) --- */
+  /* --- 現代控制台深色背景 (Deep Slate & Calm Blue) --- */
   --bg-primary: #0a0d14;        /* 主背景極致深黑 Slate */
   --bg-surface: #111827;        /* 卡片表面深色 */
   --bg-surface-elevated: #1f2937;
-  --bg-surface-glass: rgba(17, 24, 39, 0.78);
+  --bg-surface-glass: rgba(17, 24, 39, 0.85);
   --border-color: rgba(255, 255, 255, 0.09);
   --border-focus: #38bdf8;
 
@@ -203,6 +203,12 @@ body {
 .btn-glass:hover {
   background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
+}
+
+.btn-glass.active-zoom {
+  background: rgba(2, 132, 199, 0.25);
+  border-color: #38bdf8;
+  color: #38bdf8;
 }
 
 .btn-glow-primary {
@@ -488,7 +494,7 @@ body {
 .phone-scroll-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 16px 84px 16px;
+  padding: 14px 16px 96px 16px; /* 增加底部 padding 防止導航列遮擋發送按鈕 */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
@@ -509,15 +515,15 @@ body {
   left: 16px;
   right: 16px;
   height: 64px;
-  background: rgba(17, 24, 39, 0.92);
+  background: rgba(17, 24, 39, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 28px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
   z-index: 25;
 }
 
@@ -534,7 +540,7 @@ body {
   border-radius: 16px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   min-width: 52px;
-  min-height: 48px; /* UI/UX Pro Max 規範：大於 44px 觸控點擊目標 */
+  min-height: 48px;
 }
 
 .nav-tab-item.active {
@@ -563,7 +569,7 @@ body {
   opacity: 0.6;
 }
 
-/* 分頁切換 */
+/* 分頁切換動畫 */
 .tab-content {
   display: none;
 }
@@ -616,6 +622,50 @@ body {
   overflow: hidden;
   background: var(--paper-bg);
   box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.1);
+}
+
+.canvas-action-toolbar {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-tool-send {
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+  color: #ffffff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(198, 40, 40, 0.4);
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.btn-tool-send:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-tool-sync {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: #e5e7eb;
+  padding: 10px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.btn-tool-sync:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 #designerCanvas {
@@ -680,7 +730,7 @@ body {
 }
 
 .chip-btn.active {
-  background: rgba(2, 132, 199, 0.2);
+  background: rgba(2, 132, 199, 0.25);
   border-color: #38bdf8;
   color: #38bdf8;
   font-weight: 700;
@@ -726,7 +776,7 @@ body {
 
 .modern-input:focus, .modern-textarea:focus, .modern-select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25); /* UI/UX Pro Max 規範：明確的 Focus Ring */
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
 }
 
 .font-toggle-group {
@@ -744,6 +794,7 @@ body {
   font-size: 12px;
   cursor: pointer;
   font-weight: 600;
+  text-align: center;
 }
 
 .font-chip.active {
@@ -1252,10 +1303,17 @@ body {
   gap: 4px;
   font-size: 11px;
   font-weight: 700;
-  color: #6b7280;
+  color: #9ca3af;
   padding: 2px 8px;
   border-radius: 12px;
   border: 1px dashed #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nfc-target-mark:hover {
+  color: #38bdf8;
+  border-color: #38bdf8;
 }
 
 .piezo-grille {
@@ -1291,6 +1349,7 @@ body {
   border-radius: 18px;
   border: 3px solid #232730;
   box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.8);
+  position: relative;
 }
 
 .epaper-display-screen.landscape-screen {
@@ -1301,13 +1360,21 @@ body {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+/* 墨水微粒放大鏡模式 (Zoom Mode) */
+.epaper-display-screen.landscape-screen.zoom-active {
+  transform: scale(1.15);
+  z-index: 50;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 0 2px #38bdf8;
 }
 
 /* 微米紙紋覆蓋層 (漫反射紙感) */
 .matte-paper-texture {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
   background-size: 3px 3px;
   pointer-events: none;
   z-index: 5;
@@ -1370,10 +1437,10 @@ body {
   color: #6b7280;
 }
 
-/* 橫向雙欄式黑紅白電子紙排版 */
+/* 橫向雙欄式黑紅白電子紙排版 (優化高度自適應，防止溢出) */
 .epaper-render-content.landscape-render {
   height: 100%;
-  padding: 20px 24px;
+  padding: 14px 18px; /* 優化 padding，讓垂直高度更充裕 */
   color: var(--ink-black);
   position: relative;
   z-index: 4;
@@ -1381,18 +1448,19 @@ body {
 
 .landscape-layout-grid {
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 24px;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
   height: 100%;
 }
 
 /* 左欄：日期、大時鐘、狀態印章 */
 .epd-left-column {
   border-right: 2px solid var(--ink-black);
-  padding-right: 18px;
+  padding-right: 12px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px; /* 使用彈性 gap 替代 space-between，絕不超出底部邊界 */
 }
 
 .epd-date-block {
@@ -1401,50 +1469,55 @@ body {
 }
 
 .epd-day-name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink-secondary);
+  line-height: 1.2;
 }
 
 .epd-date-num {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
 }
 
 .epd-big-clock {
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 900;
   font-family: var(--font-main);
-  letter-spacing: -1.5px;
+  letter-spacing: -1px;
   color: var(--ink-black);
-  margin: 8px 0;
+  line-height: 1.1;
+  margin: 2px 0;
 }
 
 /* 醒目的三色模式印章 */
 .epd-stamp-badge {
   background: var(--eink-red);
   color: #ffffff;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
   box-shadow: 2px 2px 0px #000;
+  width: fit-content;
 }
 
 .stamp-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .epd-channel-info {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--ink-secondary);
   border-top: 1px dashed var(--paper-border);
   padding-top: 6px;
+  line-height: 1.3;
 }
 
 /* 右欄：標題、內文、手寫筆跡、署名 */
@@ -1452,7 +1525,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding-left: 6px;
+  padding-left: 4px;
 }
 
 .epd-header-row {
@@ -1462,7 +1535,7 @@ body {
 }
 
 .epd-headline {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
   color: var(--eink-red);
   letter-spacing: -0.5px;
@@ -1470,18 +1543,18 @@ body {
 }
 
 .epd-emoji-badge {
-  font-size: 36px;
+  font-size: 32px;
 }
 
 .epd-accent-rule {
   height: 3px;
   background: var(--eink-red);
-  margin: 8px 0 12px 0;
+  margin: 6px 0 10px 0;
   border-radius: 2px;
 }
 
 .epd-paragraph {
-  font-size: 24px; /* 長輩無障礙大字體 */
+  font-size: 22px; /* 長輩無障礙大字體 */
   font-weight: 700;
   color: var(--ink-black);
   line-height: 1.45;
@@ -1489,20 +1562,20 @@ body {
 }
 
 .epd-signature-display {
-  min-height: 44px;
+  min-height: 36px;
   display: flex;
   align-items: center;
-  margin: 6px 0;
+  margin: 4px 0;
 }
 
 .epd-sign-zone {
   display: flex;
   justify-content: flex-end;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--ink-secondary);
   border-top: 1px solid rgba(0, 0, 0, 0.15);
-  padding-top: 6px;
+  padding-top: 4px;
 }
 
 /* 右側人體工學按鍵操作柱 */
@@ -1681,11 +1754,11 @@ body {
 }
 
 .btn-scenario-step.active-scenario {
-  background: #c62828;
-  border-color: #ef4444;
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 0 10px rgba(198, 40, 40, 0.5);
+  background: #c62828 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 10px rgba(198, 40, 40, 0.5) !important;
 }
 
 .bench-actions {
