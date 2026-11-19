@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family E-Care — 遠端家庭關懷電子紙系統</title>
-  <!-- 引入現代精緻英數與繁中字體 -->
+  <title>Family E-Care — 遠端家庭關懷電子紙系統 (4.2" 黑紅白橫向版)</title>
+  
+  <!-- UI/UX Pro Max 規範：引入無障礙 Atkinson Hyperlegible 與 Noto Sans TC -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="ambient-glow-bg"></div>
 
   <div class="layout-container">
-    <!-- 頂端玻璃擬態導航列 -->
+    <!-- 頂端導航列 (依照 ui-ux-pro-max 規範：Accessible & High Contrast) -->
     <header class="navbar">
       <div class="brand">
         <div class="brand-logo-gem">
@@ -23,23 +24,20 @@
         <div class="brand-text">
           <div class="brand-badge-line">
             <h1>Family E-Care</h1>
-            <span class="tag-version">PROTOTYPE 2.0</span>
+            <span class="tag-version">PROTOTYPE 3.0</span>
+            <span class="tag-spec">4.2" 橫向黑紅白三色</span>
           </div>
-          <span class="subtext">遠端長輩關懷與智慧電子紙系統 · 工業設計與雙向體驗</span>
+          <span class="subtext">遠端長輩關懷與智慧電子紙系統 · N條常態輪播 ＋ 智慧排程插播聯動</span>
         </div>
       </div>
 
       <div class="nav-controls">
-        <div class="segmented-control">
-          <button id="btnModeColor" class="seg-btn active" title="模擬 4.01 吋全彩電子紙">
-            <span class="color-dot-indicator"></span>全彩模式 (Spectra 6)
-          </button>
-          <button id="btnModeTri" class="seg-btn" title="模擬 4.2 吋黑紅白三色電子紙">
-            <span class="tri-dot-indicator"></span>三色模式 (黑紅白)
-          </button>
+        <div class="eink-spec-capsule">
+          <span class="dot-tri-bwr"></span>
+          <span class="capsule-text">三色電子紙 (黑 / 紅 / 白) 橫向 400×300 (600×380 映射)</span>
         </div>
 
-        <button id="btnZoomToggle" class="btn-glass" title="放大檢視微米紙質與墨水粒子">
+        <button id="btnZoomToggle" class="btn-glass" title="放大檢視微米紙質與黑紅墨水粒子">
           <span class="icon">🔍</span> 墨水微粒
         </button>
 
@@ -68,22 +66,20 @@
             <div class="di-expanded" id="diExpanded">
               <div class="di-avatar">👵</div>
               <div class="di-text">
-                <span class="di-title">客廳 E-Care 已收到</span>
-                <span class="di-desc" id="diDesc">奶奶按下了「我看到了」！</span>
+                <span class="di-title" id="diTitle">客廳 E-Care 已收到</span>
+                <span class="di-desc" id="diDesc">長輩按下了「我看到了」！</span>
               </div>
-              <span class="di-badge">已確認</span>
+              <span class="di-badge" id="diBadge">已確認</span>
             </div>
           </div>
         </div>
 
         <!-- 手機頂部狀態列 -->
         <div class="status-bar">
-          <span class="status-time">09:41</span>
+          <span class="status-time" id="virtualPhoneClock">09:00</span>
           <div class="status-icons">
-            <span class="signal-bar">
-              <i></i><i></i><i></i><i></i>
-            </span>
-            <span class="wifi-icon">📶 5G</span>
+            <span class="signal-bar"><i></i><i></i><i></i><i></i></span>
+            <span class="wifi-icon">📶 Wi-Fi</span>
             <span class="battery-icon">100% 🔋</span>
           </div>
         </div>
@@ -91,32 +87,48 @@
         <!-- App 頂部客廳識別資訊 -->
         <div class="app-top-header">
           <div class="app-room-info">
-            <span class="room-pill">客廳終端</span>
+            <span class="room-pill">客廳橫向電子紙</span>
             <h2>奶奶的溫馨客廳</h2>
           </div>
           <div class="device-live-pill" id="appConnStatus">
             <span class="live-pulse"></span>
-            <span>Wi-Fi 在線 (350mAh: 96%)</span>
+            <span>Wi-Fi 在線 · 350mAh (96%)</span>
           </div>
+        </div>
+
+        <!-- 當前運作模式即時指示徽章 -->
+        <div class="mode-status-banner" id="modeStatusBanner">
+          <div class="mode-badge-left">
+            <span class="mode-icon-pulse" id="modeIconPulse">🔄</span>
+            <div>
+              <div class="mode-title" id="modeBannerTitle">智慧混合模式：常態輪播中</div>
+              <div class="mode-detail" id="modeBannerDetail">指定 3 則常態訊息輪播中 · 等待 09:00 排程插播</div>
+            </div>
+          </div>
+          <span class="mode-chip-status" id="modeChipStatus">運作中</span>
         </div>
 
         <!-- App 主體滾動內容區域 -->
         <div class="phone-scroll-body">
 
-          <!-- 分頁 1: 關懷卡視覺設計工作坊 (Card Studio) -->
+          <!-- -------------------------------------------------------- -->
+          <!-- 分頁 1: 關懷卡視覺設計工作坊 (橫向黑紅白畫布)           -->
+          <!-- -------------------------------------------------------- -->
           <div id="tab-designer" class="tab-content active">
             
-            <!-- 即時畫布預覽展台 (立體光影陰影) -->
+            <!-- 即時畫布預覽展台 (橫向 600x380 映射) -->
             <div class="card-stage-container">
               <div class="card-stage-shadow"></div>
-              <div class="canvas-mount">
+              <div class="canvas-mount landscape-mount">
                 <div class="canvas-header-decor">
                   <span class="dot-red"></span>
-                  <span class="dot-yellow"></span>
-                  <span class="dot-green"></span>
-                  <span class="mount-label">400 × 600 電子紙 1:1 實時映射</span>
+                  <span class="dot-black"></span>
+                  <span class="dot-white"></span>
+                  <span class="mount-label">橫向 4.2 吋黑紅白三色電子紙 (1:1 實時映射)</span>
                 </div>
-                <canvas id="designerCanvas" width="400" height="600"></canvas>
+                <div class="canvas-wrapper-landscape">
+                  <canvas id="designerCanvas" width="600" height="380"></canvas>
+                </div>
               </div>
             </div>
 
@@ -127,24 +139,24 @@
               <div class="form-section">
                 <div class="section-label-row">
                   <label class="studio-label">情境版型</label>
-                  <span class="label-hint">一鍵切換預設設計</span>
+                  <span class="label-hint">黑紅白高對比設計</span>
                 </div>
                 <div class="template-chips" id="templateSelector">
                   <button class="chip-btn active" data-tpl="greeting">
                     <span class="chip-icon">🌸</span>
-                    <span class="chip-text">溫馨問候</span>
+                    <span class="chip-text">日常問候</span>
                   </button>
                   <button class="chip-btn" data-tpl="medicine">
                     <span class="chip-icon">💊</span>
-                    <span class="chip-text">服藥叮嚀</span>
+                    <span class="chip-text">按時服藥</span>
                   </button>
                   <button class="chip-btn" data-tpl="calendar">
                     <span class="chip-icon">🏥</span>
-                    <span class="chip-text">門診接送</span>
+                    <span class="chip-text">門診叮嚀</span>
                   </button>
-                  <button class="chip-btn" data-tpl="photo">
-                    <span class="chip-icon">🖼️</span>
-                    <span class="chip-text">照片生活</span>
+                  <button class="chip-btn" data-tpl="walk">
+                    <span class="chip-icon">🚶</span>
+                    <span class="chip-text">散步喝水</span>
                   </button>
                 </div>
               </div>
@@ -152,164 +164,279 @@
               <!-- 常用關懷短語庫 -->
               <div class="form-section">
                 <div class="section-label-row">
-                  <label class="studio-label">常用家庭短語</label>
-                  <span class="label-hint">點擊直接帶入</span>
+                  <label class="studio-label">長輩常用關懷短語</label>
+                  <span class="label-hint">點擊帶入</span>
                 </div>
                 <div class="phrase-bubbles" id="quickPhrases">
-                  <button class="bubble" data-text="今天外頭風大變冷了，出門記得穿上紅色厚外套，多喝溫水喔！🌸" data-title="天氣轉涼叮嚀">🧣 天氣變冷穿暖</button>
-                  <button class="bubble" data-text="晚餐後請服用降血壓藥一顆，配溫開水慢慢吞服，不要忘記囉！💊" data-title="晚餐後吃藥">💊 降血壓吃藥</button>
-                  <button class="bubble" data-text="下午陽光很舒服，出門到公園散步走走，記得帶溫水壺喔！🚶" data-title="下午散步走走">🚶 公園散步</button>
-                  <button class="bubble" data-text="本週六大家一起回家陪您吃中飯，好想吃您煮的滷豬腳！🥰" data-title="週末回家聚餐">🍲 週末回家吃中飯</button>
-                  <button class="bubble" data-text="週四上午 09:30 台大醫院回診，叔叔九點會準時開車到門口載您！🏥" data-title="週四台大醫院門診">🏥 醫院門診接送</button>
-                  <button class="bubble" data-text="小孫女今天數學考了100分！吵著週末要回去給奶奶看獎狀！👧" data-title="小寶貝放學好消息">👧 孫女考100分</button>
+                  <button class="bubble" data-text="今天外頭風大變冷了，出門記得穿上紅色厚外套，多喝溫熱水喔！🌸" data-title="天氣轉涼提醒">🧣 天氣變冷穿暖</button>
+                  <button class="bubble" data-text="降血壓藥在餐桌左邊白色盒子，晚餐後請記得吃一顆喔！💊" data-title="晚餐後服藥提醒">💊 晚餐後吃降壓藥</button>
+                  <button class="bubble" data-text="客廳冰箱有切好的新鮮水梨，口渴記得拿出來吃喔！🍎" data-title="冰箱有水果">🍎 冰箱有切好水果</button>
+                  <button class="bubble" data-text="下午陽光很舒服，出門到公園散散步，記得隨身帶溫水壺喔！🚶" data-title="公園散步走走">🚶 下午公園散步</button>
+                  <button class="bubble" data-text="本週六大家一起回家陪您吃中飯，好期待吃您煮的滷肉！🥰" data-title="週末闔家聚餐">🍲 週末回家吃中飯</button>
+                  <button class="bubble" data-text="週四上午 09:30 台大醫院回診，叔叔九點會準時開車到門口載您！🏥" data-title="週四台大門診">🏥 門診專車接送</button>
                 </div>
               </div>
 
-              <!-- 卡片標題與字體大小 -->
+              <!-- 卡片主標題 -->
               <div class="form-section">
                 <label class="studio-label">卡片主標題</label>
                 <div class="input-with-icon">
                   <span class="input-icon">✏️</span>
-                  <input type="text" id="designTitle" value="早安，奶奶！" class="modern-input" placeholder="輸入主標題">
+                  <input type="text" id="designTitle" value="早安，奶奶！" class="modern-input" placeholder="輸入大字主標題">
                 </div>
               </div>
 
               <!-- 長輩字體大小 -->
               <div class="form-section">
                 <div class="section-label-row">
-                  <label class="studio-label">長輩閱讀字級</label>
-                  <span class="label-hint">友善大字體排版</span>
+                  <label class="studio-label">長輩閱讀字級 (Atkinson Hyperlegible)</label>
+                  <span class="label-hint">無障礙高辨識度</span>
                 </div>
                 <div class="font-toggle-group" id="fontSizeSelector">
-                  <button class="font-chip" data-size="20">標準 20px</button>
-                  <button class="font-chip active" data-size="24">特大 24px</button>
-                  <button class="font-chip" data-size="28">超大 28px</button>
+                  <button class="font-chip" data-size="22">標準 22px</button>
+                  <button class="font-chip active" data-size="26">大字 26px</button>
+                  <button class="font-chip" data-size="30">特大 30px</button>
                 </div>
               </div>
 
-              <!-- Emoji 挑選 -->
+              <!-- 主題 Emoji 徽飾 -->
               <div class="form-section">
-                <label class="studio-label">主題 Emoji 徽飾</label>
+                <label class="studio-label">主題圖示 Emoji</label>
                 <div class="emoji-carousel" id="emojiPicker">
                   <span class="emoji-circle selected">🌸</span>
-                  <span class="emoji-circle">❤️</span>
+                  <span class="emoji-circle">💊</span>
+                  <span class="emoji-circle">🏥</span>
                   <span class="emoji-circle">🍵</span>
                   <span class="emoji-circle">👵</span>
-                  <span class="emoji-circle">💊</span>
                   <span class="emoji-circle">🍲</span>
-                  <span class="emoji-circle">🐱</span>
-                  <span class="emoji-circle">🌞</span>
                   <span class="emoji-circle">🧣</span>
-                  <span class="emoji-circle">🏥</span>
+                  <span class="emoji-circle">🚶</span>
+                  <span class="emoji-circle">🍎</span>
+                  <span class="emoji-circle">❤️</span>
                 </div>
               </div>
 
               <!-- 關懷內文 -->
               <div class="form-section">
-                <label class="studio-label">關懷內文</label>
+                <label class="studio-label">關懷內文 (橫向排版自適應換行)</label>
                 <textarea id="designContent" rows="3" class="modern-textarea" placeholder="輸入你想對長輩說的心裡話...">今天外頭風大變冷了，出門散步記得穿上紅色厚外套，多喝熱水喔！</textarea>
+              </div>
+
+              <!-- 三色模式重點強調色 (紅 / 黑) -->
+              <div class="form-section">
+                <div class="section-label-row">
+                  <label class="studio-label">電子紙重點強調色 (三色專用)</label>
+                  <span class="label-hint">紅黑高對比</span>
+                </div>
+                <div class="tri-color-bar" id="triColorPicker">
+                  <label class="color-radio-label active">
+                    <input type="radio" name="designTriColor" value="#c62828" checked>
+                    <span class="color-pill-indicator bg-eink-red"></span>
+                    <span>醒目緋紅 (服藥/重要警示)</span>
+                  </label>
+                  <label class="color-radio-label">
+                    <input type="radio" name="designTriColor" value="#1a1a1a">
+                    <span class="color-pill-indicator bg-eink-black"></span>
+                    <span>沉穩墨黑 (日常溫馨問候)</span>
+                  </label>
+                </div>
               </div>
 
               <!-- 親筆手寫簽名板 (子女真情筆跡) -->
               <div class="form-section">
                 <div class="section-label-row">
-                  <label class="studio-label">✍️ 親筆手寫簽名 / 塗鴉</label>
-                  <button id="btnClearSignature" class="btn-text-sm">重寫清除</button>
+                  <label class="studio-label">✍️ 親筆手寫真情筆跡 (紅色墨水)</label>
+                  <button id="btnClearSignature" class="btn-text-sm">清除重寫</button>
                 </div>
                 <div class="signature-stage">
-                  <canvas id="signatureCanvas" width="360" height="90" class="sig-pad"></canvas>
-                  <span class="sig-guide-watermark">在此手寫真情筆跡 (支援觸控滑鼠)</span>
+                  <canvas id="signatureCanvas" width="500" height="90" class="sig-pad"></canvas>
+                  <span class="sig-guide-watermark">在此手寫祝福或愛心簽名 (支援滑鼠與觸控)</span>
                 </div>
               </div>
 
-              <!-- 署名與生活照片 -->
+              <!-- 署名 -->
               <div class="form-section">
                 <label class="studio-label">署名祝福</label>
                 <input type="text" id="designAuthor" value="兒女與孫子們敬上" class="modern-input">
               </div>
 
-              <div class="form-section">
-                <div class="section-label-row">
-                  <label class="studio-label">📷 生活照片 (自動電子紙抖動)</label>
-                  <label for="designPhotoInput" class="custom-file-upload">
-                    <span>選取照片檔案</span>
-                  </label>
-                  <input type="file" id="designPhotoInput" accept="image/*" style="display:none;">
-                </div>
-              </div>
-
-              <!-- Spectra 6 / 3 色色調選擇 -->
-              <div class="form-section">
-                <label class="studio-label">邊框與標題主題色</label>
-                <div class="color-palette-bar" id="colorPicker">
-                  <div class="color-swatch color-red selected" data-color="#dc2626" title="紅色"></div>
-                  <div class="color-swatch color-yellow" data-color="#d97706" title="暖黃色"></div>
-                  <div class="color-swatch color-green" data-color="#16a34a" title="草木綠"></div>
-                  <div class="color-swatch color-blue" data-color="#2563eb" title="深邃藍"></div>
-                  <div class="color-swatch color-black" data-color="#000000" title="極致黑"></div>
-                </div>
-              </div>
-
               <!-- 發送大按鈕 -->
               <button id="btnSendDesign" class="btn-action-send">
                 <span class="send-glow"></span>
-                <span class="send-text">🚀 發送卡片至長輩客廳裝置</span>
+                <span class="send-text">🚀 發送卡片至客廳橫向電子紙</span>
               </button>
             </div>
           </div>
 
-          <!-- 分頁 2: 常態輪播管理 -->
+          <!-- -------------------------------------------------------- -->
+          <!-- 分頁 2: 常態輪播管理 (指定 N 條輪播 ＋ 模式策略)         -->
+          <!-- -------------------------------------------------------- -->
           <div id="tab-carousel" class="tab-content">
             <div class="content-header-card">
-              <h3>客廳常態輪播管理</h3>
-              <p>無定時提醒時，由裝置 RTC 定時依序輪替展示的家庭日常問候</p>
+              <div class="header-badge-row">
+                <h3>客廳常態輪播管理</h3>
+                <span class="badge-accent" id="carouselSelectedCountBadge">已指定 3 則輪播</span>
+              </div>
+              <p>可以自選指定 N 條溫馨訊息常態輪播。此模式下可設定排程插播或純輪播不打擾。</p>
             </div>
 
-            <div class="modern-card">
-              <label class="studio-label">新增常態輪播短語</label>
-              <textarea id="carouselInput" class="modern-textarea" rows="2" placeholder="例：『客廳冰箱有切好的水梨，記得拿出來吃喔！🍎』"></textarea>
+            <!-- 系統運作策略設定 (滿足使用者提綱：常態輪播就不會啟動排程提醒 / 或混合模式) -->
+            <div class="modern-card strategy-card">
+              <div class="card-title-icon">
+                <span class="icon-bubble">⚙️</span>
+                <h4>輪播與排程協作模式 (廣播策略)</h4>
+              </div>
               
-              <div class="flex-row-gap">
+              <div class="strategy-options-group">
+                <label class="strategy-radio-item" id="optHybridMode">
+                  <input type="radio" name="broadcastStrategy" value="hybrid" checked>
+                  <div class="strategy-text-group">
+                    <div class="strategy-title">
+                      <strong>智慧混合模式 (推薦)</strong>
+                      <span class="badge-mini-green">最靈活</span>
+                    </div>
+                    <p class="strategy-desc">
+                      平常由指定 N 則常態訊息輪播；當到達排程時間（如 09:00 吃藥）時<strong>插播提醒</strong>，長輩按鍵確認後<strong>自動返回常態輪播</strong>！
+                    </p>
+                  </div>
+                </label>
+
+                <label class="strategy-radio-item" id="optCarouselOnlyMode">
+                  <input type="radio" name="broadcastStrategy" value="carousel_only">
+                  <div class="strategy-text-group">
+                    <div class="strategy-title">
+                      <strong>純常態輪播模式 (不啟動排程提醒)</strong>
+                      <span class="badge-mini-gray">無排程打擾</span>
+                    </div>
+                    <p class="strategy-desc">
+                      嚴格鎖定於指定 N 則常態訊息循環播放，<strong>完全不會啟動任何排程提醒</strong>，適合安靜休養、無定時服藥日。
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- 輪播頻率設定 -->
+              <div class="form-group-modern" style="margin-top: 14px;">
+                <label class="studio-label">常態訊息輪播間隔</label>
                 <select id="carouselInterval" class="modern-select">
-                  <option value="30">每 30 分鐘自動換頁</option>
-                  <option value="60">每 1 小時自動換頁</option>
-                  <option value="120">每 2 小時自動換頁</option>
+                  <option value="15">每 15 分鐘更換下一則</option>
+                  <option value="30" selected>每 30 分鐘更換下一則</option>
+                  <option value="60">每 1 小時更換下一則</option>
+                  <option value="manual">僅透過側邊按鈕手動換頁</option>
                 </select>
-                <button id="btnAddCarousel" class="btn-solid-primary">＋ 加入清單</button>
               </div>
             </div>
 
+            <!-- 新增輪播訊息 -->
+            <div class="modern-card">
+              <label class="studio-label">新增常態關懷訊息</label>
+              <textarea id="carouselInput" class="modern-textarea" rows="2" placeholder="例：『客廳冰箱有切好的水梨，口渴記得拿出來吃喔！🍎』"></textarea>
+              
+              <div class="flex-row-gap" style="margin-top: 10px;">
+                <select id="carouselTagSelect" class="modern-select">
+                  <option value="🌸 日常問候">🌸 日常問候</option>
+                  <option value="💊 生活叮嚀">💊 生活叮嚀</option>
+                  <option value="🍎 飲食關懷">🍎 飲食關懷</option>
+                  <option value="🚶 散步活動">🚶 散步活動</option>
+                </select>
+                <button id="btnAddCarousel" class="btn-solid-primary">＋ 加入儲存庫</button>
+              </div>
+            </div>
+
+            <!-- 輪播訊息選擇清單 (使用者可打勾指定 N 條) -->
+            <div class="section-label-row" style="margin: 16px 4px 8px 4px;">
+              <span class="studio-label">勾選要加入輪播的訊息 (指定 N 條)</span>
+              <span class="label-hint" id="carouselCheckSummary">已勾選 3 條</span>
+            </div>
+            
             <div class="carousel-cards-list" id="carouselList">
-              <!-- 動態生成輪播卡片 -->
+              <!-- 動態生成帶 Checkbox 的輪播清單 -->
             </div>
           </div>
 
-          <!-- 分頁 3: 排程提醒中心 -->
+          <!-- -------------------------------------------------------- -->
+          <!-- 分頁 3: 排程提醒中心 (支援單次顯示回輪播 / 空檔可選輪播)  -->
+          <!-- -------------------------------------------------------- -->
           <div id="tab-schedule" class="tab-content">
             <div class="content-header-card">
-              <h3>智慧定時排程提醒</h3>
-              <p>到達排程時間，客廳電子紙將自動喚醒、呼吸閃爍 LED 並響起可愛蜂鳴音</p>
+              <div class="header-badge-row">
+                <h3>智慧定時排程提醒</h3>
+                <span class="badge-accent">定點精準通知</span>
+              </div>
+              <p>一條條時間定點提醒。可設定提醒顯示一次後切換回常態輪播，並自選排程空檔時的顯示行為。</p>
             </div>
 
-            <div class="modern-card">
-              <label class="studio-label">提醒標題</label>
-              <input type="text" id="scheduleTitle" class="modern-input" placeholder="例如: 晚間吃降血壓藥">
+            <!-- 排程空檔時間行為設定 (滿足使用者提綱：中間時間常態輪播或沒有都可以) -->
+            <div class="modern-card interim-card">
+              <div class="card-title-icon">
+                <span class="icon-bubble">⏳</span>
+                <h4>排程與排程之間的空檔時間行為</h4>
+              </div>
+              <p class="card-desc-text">
+                例如排了 <strong>09:00 一個訊息</strong>、<strong>10:00 一個訊息</strong>，在這中間的一小時空檔：
+              </p>
 
-              <div class="flex-row-gap">
-                <select id="scheduleCategory" class="modern-select">
-                  <option value="med">💊 服藥提醒</option>
-                  <option value="clinic">🏥 門診醫院</option>
-                  <option value="water">💧 喝水補充</option>
-                  <option value="walk">🚶 散步運動</option>
-                  <option value="family">💌 家人祝賀</option>
-                </select>
-                <input type="time" id="scheduleTime" class="modern-input" value="20:00">
+              <div class="interim-toggle-grid">
+                <label class="interim-option-card active" id="lblInterimCarousel">
+                  <input type="radio" name="interimBehavior" value="carousel" checked>
+                  <div class="interim-content">
+                    <div class="interim-title">🔄 空檔進行常態輪播</div>
+                    <div class="interim-desc">顯示指定 N 條日常關懷訊息循環</div>
+                  </div>
+                </label>
+
+                <label class="interim-option-card" id="lblInterimBlank">
+                  <input type="radio" name="interimBehavior" value="idle">
+                  <div class="interim-content">
+                    <div class="interim-title">⚪ 空檔無訊息 / 靜止大時鐘</div>
+                    <div class="interim-desc">不播放輪播，僅維持大時鐘與日曆</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 新增排程項目表單 -->
+            <div class="modern-card">
+              <div class="card-title-icon">
+                <span class="icon-bubble">➕</span>
+                <h4>新增定時排程提醒</h4>
               </div>
 
-              <label class="studio-label" style="margin-top: 10px;">長輩叮嚀說明</label>
-              <textarea id="scheduleContent" class="modern-textarea" rows="2" placeholder="配溫開水服用，紅色與黃色各一顆喔！"></textarea>
+              <label class="studio-label">提醒標題</label>
+              <input type="text" id="scheduleTitle" class="modern-input" placeholder="例如: 09:00 吃降血壓藥">
 
-              <button id="btnAddSchedule" class="btn-solid-primary btn-block">＋ 建立定時排程提醒</button>
+              <div class="flex-row-gap" style="margin-top: 10px;">
+                <select id="scheduleCategory" class="modern-select">
+                  <option value="med">💊 服藥提醒 (紅色強調)</option>
+                  <option value="clinic">🏥 門診醫院 (紅色強調)</option>
+                  <option value="water">💧 喝水補充</option>
+                  <option value="walk">🚶 散步運動</option>
+                  <option value="family">💌 家人問候</option>
+                </select>
+                <input type="time" id="scheduleTime" class="modern-input" value="09:00">
+              </div>
+
+              <label class="studio-label" style="margin-top: 10px;">叮嚀內容</label>
+              <textarea id="scheduleContent" class="modern-textarea" rows="2" placeholder="配溫開水服用，紅色藥丸一顆！"></textarea>
+
+              <!-- 單次觸發後的行為 (滿足：顯示了一次 就變成常態輪播) -->
+              <div class="post-trigger-row" style="margin-top: 12px;">
+                <label class="checkbox-container">
+                  <input type="checkbox" id="scheduleAfterAckReturnCarousel" checked>
+                  <span class="checkmark"></span>
+                  <span class="checkbox-label">
+                    長輩按下「我看到了」確認後，<strong>自動切換回常態輪播</strong>
+                  </span>
+                </label>
+              </div>
+
+              <button id="btnAddSchedule" class="btn-solid-primary btn-block" style="margin-top: 14px;">＋ 建立定時排程提醒</button>
+            </div>
+
+            <!-- 排程時間軸清單 -->
+            <div class="section-label-row" style="margin: 16px 4px 8px 4px;">
+              <span class="studio-label">排程時間軸</span>
+              <span class="label-hint">按時間先後排序</span>
             </div>
 
             <div class="schedule-cards-list" id="scheduleList">
@@ -317,11 +444,13 @@
             </div>
           </div>
 
-          <!-- 分頁 4: 訊息庫與閱讀確認 -->
+          <!-- -------------------------------------------------------- -->
+          <!-- 分頁 4: 歷史紀錄與長輩反饋                               -->
+          <!-- -------------------------------------------------------- -->
           <div id="tab-history" class="tab-content">
             <div class="content-header-card">
               <h3>家庭關懷紀錄與長輩反饋</h3>
-              <p>完整紀錄每一則關懷的發送時間、閱讀確認狀態與長輩反應耗時</p>
+              <p>完整紀錄每一則關懷的發送時間、閱讀確認狀態與長輩反應反饋</p>
             </div>
 
             <div class="stats-counter-grid">
@@ -335,7 +464,7 @@
               </div>
               <div class="stat-card highlight-amber">
                 <span class="stat-val text-amber" id="statPending">0</span>
-                <span class="stat-name">等待長輩閱讀</span>
+                <span class="stat-name">等待長輩按鍵</span>
               </div>
             </div>
 
@@ -344,7 +473,9 @@
             </div>
           </div>
 
-          <!-- 分頁 5: 設備與 NFC 配網 -->
+          <!-- -------------------------------------------------------- -->
+          <!-- 分頁 5: 設備與 NFC 配網                                  -->
+          <!-- -------------------------------------------------------- -->
           <div id="tab-settings" class="tab-content">
             <div class="content-header-card">
               <h3>裝置連網與低功耗管理</h3>
@@ -398,6 +529,7 @@
             <div class="modern-card spec-summary-card">
               <h4>🏷️ 產品規格與售價指標</h4>
               <ul>
+                <li>螢幕規格：<strong>4.2 吋黑紅白 (BWR) 三色電子紙 · 橫向顯示</strong></li>
                 <li>目標建議零售價：<strong>NT$2,000 (約 RMB 300) 以內</strong></li>
                 <li>主控核心架構：<strong>低成本 MCU ＋ 獨立 Wi-Fi (量產單晶片 ESP32-C3)</strong></li>
                 <li>充電介面：<strong>USB Type-C (5V 500mA)</strong></li>
@@ -435,15 +567,15 @@
       </section>
 
       <!-- ========================================================= -->
-      <!-- 視圖 B: e-Care 實體客廳裝置擬真精品模擬器 (Physical Device) -->
+      <!-- 視圖 B: 客廳 4.2 吋黑紅白橫向電子紙實體模擬器              -->
       <!-- ========================================================= -->
       <section class="device-simulator-showcase">
         <div class="showcase-header">
           <div class="device-title-tag">
             <span class="tag-icon">🏡</span>
             <div>
-              <h3>客廳 E-Care 電子紙終端</h3>
-              <span class="tag-meta">4–6 吋微米防眩墨水屏 · 實體大按鍵</span>
+              <h3>客廳 E-Care 電子紙終端 (橫向顯示版)</h3>
+              <span class="tag-meta">4.2" 黑紅白三色 · 橫向相框工藝 · 實體大按鍵</span>
             </div>
           </div>
 
@@ -453,21 +585,11 @@
           </div>
         </div>
 
-        <!-- 擬真機身包覆容器 (包含側邊金屬質感按鈕) -->
-        <div class="device-chassis-wrapper">
+        <!-- 擬真機身包覆容器 (橫向相框造型) -->
+        <div class="device-chassis-wrapper landscape-chassis">
           
-          <!-- 側邊換頁微動開關 (G-2) -->
-          <div class="side-switch-cluster">
-            <button class="side-rocker-btn" id="btnSidePrev" title="上一則訊息 (長輩手動翻閱)">
-              <span>▲</span>
-            </button>
-            <button class="side-rocker-btn" id="btnSideNext" title="下一則訊息 (長輩手動翻閱)">
-              <span>▼</span>
-            </button>
-          </div>
-
-          <!-- 精密木質 / 溫潤白圓角立體外殼 -->
-          <div class="hardware-enclosure" id="deviceCasing">
+          <!-- 精密木質 / 溫潤陶瓷橫向外殼 -->
+          <div class="hardware-enclosure landscape-enclosure" id="deviceCasing">
             
             <!-- 頂部精密儀表列：微孔呼吸 LED、NFC 觸碰標識、壓電蜂鳴音孔 -->
             <div class="enclosure-top-bar">
@@ -489,80 +611,148 @@
               </div>
             </div>
 
-            <!-- 4~6 吋電子紙螢幕外框 (含邊緣反光與微米紙質) -->
-            <div class="epaper-bezel">
-              <div class="epaper-display-screen" id="epaperScreen">
-                
-                <!-- 3.8 秒分階段電子紙顆粒物理刷新覆蓋層 -->
-                <div class="refresh-stage-overlay" id="refreshOverlay">
-                  <div class="phase-chip" id="refreshPhaseTitle">全黑全白清除...</div>
-                  <div class="particle-spinner"></div>
-                  <div class="refresh-countdown">
-                    物理顆粒翻轉中<br>
-                    <span id="refreshTimer">3.8s</span>
-                  </div>
-                  <span class="eink-physics-note">雙穩態微膠囊顆粒偏轉 · 刷新完畢零功耗維持</span>
-                </div>
-
-                <!-- 微米紙紋覆蓋層 (防眩光自然漫反射) -->
-                <div class="matte-paper-texture"></div>
-
-                <!-- 電子紙內部真實排版視圖 (400x600 比例) -->
-                <div class="epaper-render-content" id="epaperContent">
-                  <div class="epd-system-bar">
-                    <span class="epd-brand-text">Family E-Care</span>
-                    <span class="epd-mode-pill" id="epdModeBadge">4.01" 全彩</span>
-                    <span class="epd-rtc-clock" id="epdClock">12:00</span>
-                  </div>
+            <!-- 主體橫向排版：左側螢幕 ＋ 右側人體工學按鈕群 -->
+            <div class="landscape-main-body">
+              
+              <!-- 4.2 吋黑紅白橫向電子紙螢幕外框 -->
+              <div class="epaper-bezel landscape-bezel">
+                <div class="epaper-display-screen landscape-screen" id="epaperScreen">
                   
-                  <div class="epd-visual-body" id="epdBody">
-                    <div class="epd-giant-emoji" id="epdEmoji">🌸</div>
-                    <h2 class="epd-headline" id="epdTitle">早安，奶奶！</h2>
-                    <div class="epd-accent-rule" id="epdDivider"></div>
-                    <p class="epd-paragraph" id="epdText">今天外頭風大變冷了，出門散步記得穿上紅色厚外套，多喝熱水喔！</p>
-                    <div class="epd-sign-zone" id="epdFooter">
-                      <span>❤️ 兒女與孫子們敬上</span>
+                  <!-- 3.8 秒分階段電子紙顆粒物理刷新覆蓋層 -->
+                  <div class="refresh-stage-overlay" id="refreshOverlay">
+                    <div class="phase-chip" id="refreshPhaseTitle">全黑全白清除...</div>
+                    <div class="particle-spinner"></div>
+                    <div class="refresh-countdown">
+                      黑紅白微膠囊偏轉中<br>
+                      <span id="refreshTimer">3.8s</span>
+                    </div>
+                    <span class="eink-physics-note">雙穩態微膠囊顆粒偏轉 · 刷新完畢零功耗維持</span>
+                  </div>
+
+                  <!-- 微米紙紋覆蓋層 (防眩光自然漫反射) -->
+                  <div class="matte-paper-texture"></div>
+
+                  <!-- 電子紙內部真實排版視圖 (橫向黑紅白版面) -->
+                  <div class="epaper-render-content landscape-render" id="epaperContent">
+                    
+                    <!-- 橫向雙欄式版面架構 -->
+                    <div class="landscape-layout-grid">
+                      
+                      <!-- 左欄：日期、大時鐘、狀態印章 -->
+                      <aside class="epd-left-column">
+                        <div class="epd-date-block">
+                          <span class="epd-day-name" id="epdDayOfWeek">星期四</span>
+                          <span class="epd-date-num" id="epdDateNum">11/19</span>
+                        </div>
+
+                        <div class="epd-big-clock" id="epdClock">09:00</div>
+
+                        <!-- 醒目的三色模式狀態徽飾印章 -->
+                        <div class="epd-stamp-badge" id="epdStampBadge">
+                          <span class="stamp-icon" id="epdStampIcon">🔴</span>
+                          <span class="stamp-text" id="epdStampText">服藥提醒</span>
+                        </div>
+
+                        <div class="epd-channel-info" id="epdChannelInfo">
+                          <span>排程插播 (等待確認)</span>
+                        </div>
+                      </aside>
+
+                      <!-- 右欄：大字標題、關懷內容、手寫筆跡、溫馨署名 -->
+                      <main class="epd-right-column">
+                        <div class="epd-header-row">
+                          <span class="epd-headline" id="epdTitle">早安，奶奶！</span>
+                          <span class="epd-emoji-badge" id="epdEmoji">🌸</span>
+                        </div>
+
+                        <div class="epd-accent-rule" id="epdDivider"></div>
+
+                        <p class="epd-paragraph" id="epdText">
+                          今天外頭風大變冷了，出門散步記得穿上紅色厚外套，多喝熱水喔！
+                        </p>
+
+                        <!-- 手寫筆跡渲染區 (紅色墨水印記) -->
+                        <div class="epd-signature-display" id="epdSignatureDisplay">
+                          <!-- 動態將 canvas 手繪內容顯示在此 -->
+                        </div>
+
+                        <div class="epd-sign-zone" id="epdFooter">
+                          <span>❤️ 兒女與孫子們敬上</span>
+                        </div>
+                      </main>
+
                     </div>
                   </div>
+
+                </div>
+              </div>
+
+              <!-- 右側人體工學按鈕操作區 -->
+              <div class="landscape-controls-column">
+                <div class="button-action-hint" id="buttonHint">長輩收到請按 👇</div>
+                
+                <!-- 大顆實體「我看到了 / 收到」按鍵 (G-1) -->
+                <button id="btnDeviceConfirm" class="ergonomic-tactile-btn landscape-confirm-btn">
+                  <span class="tactile-cap">⭕ 我看到了<br><small>按壓確認</small></span>
+                </button>
+
+                <!-- 側邊微動換頁開關 (G-2) -->
+                <div class="landscape-side-rockers">
+                  <span class="rocker-hint">手動翻頁</span>
+                  <div class="rocker-pair">
+                    <button class="side-rocker-btn" id="btnSidePrev" title="上一則訊息">▲</button>
+                    <button class="side-rocker-btn" id="btnSideNext" title="下一則訊息">▼</button>
+                  </div>
                 </div>
 
+                <div class="device-product-series-mini">
+                  <span>4.2" BWR E-Paper</span>
+                  <span>⚡ Type-C</span>
+                </div>
               </div>
-            </div>
 
-            <!-- 裝置正面：長輩專用凹弧人體工學實體大按鍵 (G-1「我看到了」) -->
-            <div class="tactile-control-zone">
-              <div class="button-action-hint" id="buttonHint">長輩收到請按大按鈕 👇</div>
-              <button id="btnDeviceConfirm" class="ergonomic-tactile-btn">
-                <span class="tactile-cap">⭕ 我看到了 / 收到</span>
-              </button>
-              
-              <div class="enclosure-foot-bar">
-                <span class="device-product-series">Family E-Care · 4~6” E-Ink Display</span>
-                <span class="type-c-badge" title="USB Type-C 充電埠">⚡ Type-C</span>
-              </div>
             </div>
 
           </div>
         </div>
 
-        <!-- 模擬器運作除錯與測試輔助面板 -->
+        <!-- 模擬器運作除錯與測試輔助面板 (包含使用者核心排程測試按鈕) -->
         <div class="test-bench-card">
           <div class="bench-header">
-            <h4>🧪 快速測試與硬體模擬面板</h4>
-            <span class="bench-tag">DevTools</span>
+            <h4>🧪 排程聯動與場景測試面板 (DevTools)</h4>
+            <span class="bench-tag">Scenario Testing</span>
           </div>
+
+          <!-- 核心業務邏輯快捷驗收場景 -->
+          <div class="scenario-testing-bar">
+            <span class="scenario-label">快速時間點演繹：</span>
+            <button class="btn-scenario-step" id="btnSimTime0859" title="模擬 08:59 常態輪播中">
+              08:59 常態輪播
+            </button>
+            <button class="btn-scenario-step active-scenario" id="btnSimTime0900" title="模擬 09:00 排程訊息到達，插播！">
+              09:00 排程 A 插播 🔔
+            </button>
+            <button class="btn-scenario-step" id="btnSimTime0930" title="模擬確認後 09:30 空檔輪播">
+              09:30 空檔輪播 🔄
+            </button>
+            <button class="btn-scenario-step" id="btnSimTime1000" title="模擬 10:00 排程 B 到達，再次插播！">
+              10:00 排程 B 插播 🔔
+            </button>
+          </div>
+
           <div class="bench-actions">
             <button id="btnTriggerPoll" class="btn-sm-bench">⏱️ RTC 喚醒輪詢</button>
             <button id="btnTestBuzzer" class="btn-sm-bench">🔊 試聽壓電音</button>
-            <button id="btnResetAll" class="btn-sm-bench btn-reset">🗑️ 重設預設值</button>
+            <button id="btnResetAll" class="btn-sm-bench btn-reset">🗑️ 重設所有資料</button>
           </div>
+          
           <div class="bench-console" id="simLogs">
-            [系統啟動] Family E-Care 智慧裝置就緒，處於超低功耗 Deep Sleep 模式。<br>
+            [系統啟動] Family E-Care 4.2" 橫向黑紅白三色系統就緒。<br>
           </div>
         </div>
       </section>
 
-    </div>
+    </main>
   </div>
 
   <script src="app.js"></script>
