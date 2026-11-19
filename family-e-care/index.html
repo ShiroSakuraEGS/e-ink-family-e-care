@@ -14,18 +14,28 @@
         <span class="brand-icon">🌱</span>
         <div class="brand-text">
           <h1>Family E-Care</h1>
-          <span class="subtext">遠端家庭長輩關懷與電子紙系統 (App ＋ 客廳裝置展示)</span>
+          <span class="subtext">遠端家庭長輩關懷與智慧電子紙系統 (App ＋ 客廳裝置展示)</span>
         </div>
       </div>
       <div class="nav-controls">
         <div class="mode-switch-group">
-          <span class="switch-label">螢幕顯示色域：</span>
+          <span class="switch-label">螢幕色域：</span>
           <button id="btnModeColor" class="btn-toggle active" title="模擬 4.01 吋全彩電子紙">🎨 全彩模式 (Spectra 6/ACeP)</button>
           <button id="btnModeTri" class="btn-toggle" title="模擬 4.2 吋黑紅白三色電子紙">⚪🔴 三色模式 (黑紅白)</button>
         </div>
+        <button id="btnZoomToggle" class="btn-zoom" title="切換電子紙微米白紙質與墨水粒子檢視">🔍 墨水微粒特寫</button>
         <button id="btnQuickDemo" class="btn-demo">⚡ 子女手機發送關懷卡</button>
       </div>
     </header>
+
+    <!-- 子女手機即時收到長輩已讀通知彈窗 -->
+    <div class="app-push-toast" id="appPushToast">
+      <div class="toast-icon">👵</div>
+      <div class="toast-body">
+        <strong id="toastTitle">奶奶剛剛按下了「我看到了」！</strong>
+        <p id="toastDesc">客廳裝置已刷新完畢，狀態已同步更新至雲端資料庫。</p>
+      </div>
+    </div>
 
     <!-- 主展示工作區：左側手機 App 視圖 + 右側 e-Care 實體客廳裝置模擬器 -->
     <div class="workspace">
@@ -65,7 +75,7 @@
           <div id="tab-designer" class="tab-content active">
             <div class="section-title">
               <h3>關懷卡片與 Emoji 視覺設計器</h3>
-              <p>支援打字、Emoji 貼圖、照片上傳與 Spectra 6 / 三色即時抖動</p>
+              <p>支援打字、親筆手繪簽名、Emoji 與 Spectra 6 / 三色即時渲染</p>
             </div>
 
             <!-- 卡片設計即時預覽畫布 (400x600 等比縮小) -->
@@ -86,8 +96,29 @@
                 <button class="tpl-btn" data-tpl="photo">🖼️ 照片生活</button>
               </div>
 
+              <!-- 常用關懷短語一鍵套用庫 -->
+              <label class="control-label">常用家庭關懷短語庫 (一鍵填寫)：</label>
+              <div class="quick-phrase-pills" id="quickPhrases">
+                <span class="pill" data-text="今天外頭風大變冷了，出門記得穿上紅色厚外套，多喝溫水喔！🌸" data-title="天氣轉涼叮嚀">🧣 天氣轉涼</span>
+                <span class="pill" data-text="晚餐後請服用降血壓藥一顆，配溫開水慢慢吞服，不要忘記囉！💊" data-title="晚餐後吃藥">💊 降血壓吃藥</span>
+                <span class="pill" data-text="下午陽光很舒服，出門到公園散步走走，記得帶溫水壺喔！🚶" data-title="下午散步走走">🚶 公園散步</span>
+                <span class="pill" data-text="本週六大家一起回家陪您吃中飯，好想吃您煮的滷豬腳！🥰" data-title="週末回家聚餐">🍲 週末回家吃中飯</span>
+                <span class="pill" data-text="週四上午 09:30 台大醫院回診，叔叔九點會準時開車到門口載您！🏥" data-title="週四台大醫院門診">🏥 醫院門診接送</span>
+                <span class="pill" data-text="小孫女今天數學考了100分！吵著週末要回去給奶奶看獎狀！👧" data-title="小寶貝放學好消息">👧 孫女考100分</span>
+              </div>
+
               <label class="control-label">卡片主標題：</label>
               <input type="text" id="designTitle" value="早安，奶奶！" class="input-field">
+
+              <!-- 長輩閱讀字體大小滑桿 -->
+              <div class="font-size-row">
+                <label class="control-label">長輩字體大小：</label>
+                <div class="font-size-btns" id="fontSizeSelector">
+                  <button class="font-btn" data-size="20">標準 (20px)</button>
+                  <button class="font-btn active" data-size="24">特大 (24px)</button>
+                  <button class="font-btn" data-size="28">超大 (28px)</button>
+                </div>
+              </div>
 
               <label class="control-label">挑選主題 Emoji：</label>
               <div class="emoji-picker" id="emojiPicker">
@@ -103,20 +134,30 @@
                 <span class="emoji-opt">🏥</span>
               </div>
 
-              <label class="control-label">關懷內文 (大字體排版)：</label>
-              <textarea id="designContent" rows="3">今天外頭風大變冷了，出門散步記得穿上紅色厚外套，多喝熱水喔！</textarea>
+              <label class="control-label">關懷內文 (長輩友善大字體排版)：</label>
+              <textarea id="designContent" rows="3">今天外頭風大變冷了，出門記得穿上紅色厚外套，多喝溫水喔！</textarea>
 
               <label class="control-label">署名祝福：</label>
               <input type="text" id="designAuthor" value="兒女與孫子們敬上" class="input-field">
 
+              <!-- 親筆手繪簽名板 (子女直接手寫) -->
+              <div class="handwriting-box">
+                <div class="handwriting-header">
+                  <label class="control-label">親筆手繪簽名 / 愛心圖鴉 (可選手寫)：</label>
+                  <button id="btnClearSignature" class="btn btn-sm btn-secondary">清除手寫</button>
+                </div>
+                <canvas id="signatureCanvas" width="360" height="90" class="signature-canvas"></canvas>
+                <span class="canvas-tag">在上方區域手寫簽名，將自動合成至電子紙底部</span>
+              </div>
+
               <!-- 上傳生活照片 (選用) -->
               <div class="photo-upload-row">
-                <label class="control-label">上傳生活照片 (自動 6 色/3 色抖動)：</label>
+                <label class="control-label">上傳生活照片 (自動進行電子紙抖動處理)：</label>
                 <input type="file" id="designPhotoInput" accept="image/*" class="file-btn">
               </div>
 
               <div class="color-picker-row">
-                <label class="control-label">主題色：</label>
+                <label class="control-label">主題強調色 (Spectra 6 / 黑紅白):</label>
                 <div class="color-dots" id="colorPicker">
                   <div class="dot color-red selected" data-color="#dc2626" title="紅色"></div>
                   <div class="dot color-yellow" data-color="#d97706" title="暖黃色"></div>
@@ -126,7 +167,7 @@
                 </div>
               </div>
 
-              <button id="btnSendDesign" class="btn btn-success btn-block">🚀 發送卡片至長輩客廳裝置</button>
+              <button id="btnSendDesign" class="btn btn-success btn-block">🚀 雲端發送卡片至長輩客廳裝置</button>
             </div>
           </div>
 
@@ -134,7 +175,7 @@
           <div id="tab-carousel" class="tab-content">
             <div class="section-title">
               <h3>客廳常態輪播訊息</h3>
-              <p>裝置在無特定提醒時，按順序輪流展示的家庭生活關懷</p>
+              <p>長輩未按按鍵時，由硬體 RTC 定時依序輪替展示的家庭生活關懷</p>
             </div>
             
             <div class="input-card">
@@ -163,7 +204,7 @@
           <!-- 分頁 3: 排程提醒 -->
           <div id="tab-schedule" class="tab-content">
             <div class="section-title">
-              <h3>預約定時提醒 (服藥 / 門診 / 活動)</h3>
+              <h3>預約定時提醒 (服藥 / 門診 / 喝水)</h3>
               <p>到達指定時間將自動觸發裝置 LED 呼吸閃爍與蜂鳴器提示</p>
             </div>
 
@@ -202,8 +243,8 @@
           <!-- 分頁 4: 訊息庫與閱讀確認追蹤 -->
           <div id="tab-history" class="tab-content">
             <div class="section-title">
-              <h3>訊息庫與長輩閱讀確認 (ACK)</h3>
-              <p>追蹤長輩是否已按下實體「我看到了」按鈕回傳狀態</p>
+              <h3>訊息庫與長輩閱讀確認 (ACK 狀態機)</h3>
+              <p>即時追蹤長輩是否已按壓實體「我看到了」按鈕回傳確認狀態</p>
             </div>
 
             <div class="stats-bar">
@@ -217,7 +258,7 @@
               </div>
               <div class="stat-item">
                 <span class="stat-num text-warning" id="statPending">0</span>
-                <span class="stat-label">等待長輩閱讀</span>
+                <span class="stat-label">等待長輩按鍵</span>
               </div>
             </div>
 
@@ -334,6 +375,9 @@
                   </div>
                   <div class="refresh-tech-hint">靜態顯示優化 · 無背光舒適護眼</div>
                 </div>
+
+                <!-- 電子紙微米紙紋遮罩層 -->
+                <div class="epd-paper-texture"></div>
 
                 <!-- 電子紙真實內容畫面 (400x600 比例高擬真畫布) -->
                 <div class="epaper-content" id="epaperContent">

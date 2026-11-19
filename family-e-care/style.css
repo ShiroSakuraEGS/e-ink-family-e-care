@@ -31,6 +31,7 @@ body {
   color: var(--text-main);
   min-height: 100vh;
   padding: 16px;
+  position: relative;
 }
 
 .layout-container {
@@ -78,7 +79,8 @@ body {
 .nav-controls {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* 色域模式切換 */
@@ -116,6 +118,24 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+.btn-zoom {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-zoom.active {
+  background: #1e293b;
+  color: #38bdf8;
+  border-color: #1e293b;
+}
+
 .btn-demo {
   background: #dc2626;
   color: #ffffff;
@@ -132,6 +152,47 @@ body {
 .btn-demo:hover {
   background: #b91c1c;
   transform: translateY(-1px);
+}
+
+/* 手機端頂部推播彈窗 (長輩按按鍵時連動觸發) */
+.app-push-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999;
+  border-left: 5px solid #10b981;
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-push-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-icon {
+  font-size: 1.8rem;
+}
+
+.toast-body strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #34d399;
+}
+
+.toast-body p {
+  font-size: 0.75rem;
+  color: #cbd5e1;
 }
 
 /* 主工作區 (雙欄佈局) */
@@ -159,7 +220,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 860px;
+  height: 870px;
 }
 
 .phone-header {
@@ -299,9 +360,90 @@ body {
 }
 
 .canvas-tag {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: #64748b;
   margin-top: 4px;
+}
+
+/* 快捷短語庫標籤 */
+.quick-phrase-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.pill {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pill:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+}
+
+/* 長輩字體大小選擇器 */
+.font-size-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.font-size-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.font-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.font-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+/* 親筆手繪簽名板 */
+.handwriting-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.handwriting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.signature-canvas {
+  width: 100%;
+  height: 70px;
+  background: #ffffff;
+  border: 1px dashed #94a3b8;
+  border-radius: 6px;
+  cursor: crosshair;
+  touch-action: none;
 }
 
 /* 卡片與表單元素 */
@@ -404,7 +546,7 @@ textarea:focus, .input-field:focus {
 .btn-danger { background: #ef4444; color: #ffffff; }
 .btn-danger:hover { background: #dc2626; }
 
-.btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+.btn-sm { padding: 4px 8px; font-size: 0.72rem; }
 .btn-block { width: 100%; display: block; margin-top: 6px; }
 
 /* Emoji 選擇器 */
@@ -784,6 +926,7 @@ textarea:focus, .input-field:focus {
   padding: 6px;
   border-radius: 8px;
   box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+  position: relative;
 }
 
 .epaper-screen {
@@ -795,6 +938,26 @@ textarea:focus, .input-field:focus {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* 電子紙微米紙紋遮罩層 (真實漫反射) */
+.epd-paper-texture {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 0);
+  background-size: 4px 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 墨水粒子放大檢視模式 */
+.epaper-screen.pixel-zoom-mode {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  filter: contrast(1.8) saturate(1.4);
 }
 
 /* 黑紅白三色模擬濾鏡效果 */
@@ -885,6 +1048,8 @@ textarea:focus, .input-field:focus {
   display: flex;
   flex-direction: column;
   padding: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .epd-header-bar {

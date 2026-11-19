@@ -1,15 +1,15 @@
 // ==============================================================================
 // Family E-Care — 智慧家庭遠端關懷電子紙系統 Prototype 核心邏輯
-// 深度優化：App 關懷卡視覺設計器 ＋ 客廳 4~6 吋電子紙擬真顯示
+// 深度優化：App 關懷卡視覺設計器 (手寫簽名+短語庫) ＋ 客廳電子紙擬真顯示
 // ==============================================================================
 
 // 預設資料儲存鍵值
 const STORAGE_KEYS = {
-  CAROUSEL: 'family_ecare_carousel_v2',
-  SCHEDULE: 'family_ecare_schedule_v2',
-  HISTORY: 'family_ecare_history_v2',
-  PENDING: 'family_ecare_pending_v2',
-  DISPLAY_MODE: 'family_ecare_display_mode'
+  CAROUSEL: 'family_ecare_carousel_v3',
+  SCHEDULE: 'family_ecare_schedule_v3',
+  HISTORY: 'family_ecare_history_v3',
+  PENDING: 'family_ecare_pending_v3',
+  DISPLAY_MODE: 'family_ecare_display_mode_v3'
 };
 
 // 預設初始資料
@@ -48,7 +48,7 @@ let carouselItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.CAROUSEL)) || D
 let scheduleItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULE)) || DEFAULT_SCHEDULE;
 let historyItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY)) || DEFAULT_HISTORY;
 let pendingMessage = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING)) || null;
-let currentDisplayMode = localStorage.getItem(STORAGE_KEYS.DISPLAY_MODE) || 'color'; // 'color' 全彩 或 'tri' 黑紅白三色
+let currentDisplayMode = localStorage.getItem(STORAGE_KEYS.DISPLAY_MODE) || 'color';
 
 // 輪詢計時變數 (5 分鐘 = 300 秒)
 const POLL_INTERVAL_SECONDS = 300;
@@ -64,6 +64,9 @@ const historyTableBody = document.getElementById('historyTableBody');
 const statTotal = document.getElementById('statTotal');
 const statRead = document.getElementById('statRead');
 const statPending = document.getElementById('statPending');
+const appPushToast = document.getElementById('appPushToast');
+const toastTitle = document.getElementById('toastTitle');
+const toastDesc = document.getElementById('toastDesc');
 
 // 設計器元素
 const designerCanvas = document.getElementById('designerCanvas');
@@ -73,10 +76,19 @@ const designAuthor = document.getElementById('designAuthor');
 const emojiPicker = document.getElementById('emojiPicker');
 const colorPicker = document.getElementById('colorPicker');
 const templateSelector = document.getElementById('templateSelector');
+const quickPhrases = document.getElementById('quickPhrases');
+const fontSizeSelector = document.getElementById('fontSizeSelector');
 const designPhotoInput = document.getElementById('designPhotoInput');
+
+// 手寫簽名板元素
+const signatureCanvas = document.getElementById('signatureCanvas');
+const btnClearSignature = document.getElementById('btnClearSignature');
+let isDrawing = false;
+let hasSignature = false;
 
 let selectedEmoji = "🌸";
 let selectedColor = "#dc2626";
+let currentFontSize = 24; // 預設特大字體 24px
 let uploadedPhoto = null;
 
 // 客廳實體裝置元素
@@ -105,6 +117,7 @@ const simLogs = document.getElementById('simLogs');
 // 頂部全域切換按鈕
 const btnModeColor = document.getElementById('btnModeColor');
 const btnModeTri = document.getElementById('btnModeTri');
+const btnZoomToggle = document.getElementById('btnZoomToggle');
 const btnQuickDemo = document.getElementById('btnQuickDemo');
 const btnTriggerPoll = document.getElementById('btnTriggerPoll');
 const btnTestBuzzer = document.getElementById('btnTestBuzzer');
@@ -112,7 +125,7 @@ const btnResetAll = document.getElementById('btnResetAll');
 const btnSimulateNfc = document.getElementById('btnSimulateNfc');
 
 // ==============================================================================
-// 1. Web Audio API 音效引擎 (壓電蜂鳴音 ＋ 機械微動開關 Click 音)
+// 1. Web Audio API 音效引擎 (微動開關 Click 音 ＋ 壓電蜂鳴音)
 // ==============================================================================
 let audioCtx = null;
 
@@ -127,9 +140,6 @@ function getAudioContext() {
   return audioCtx;
 }
 
-/**
- * 3V 壓電蜂鳴器可愛三重升調提示音 (C5 ➔ E5 ➔ G5)
- */
 function playCuteBuzzer() {
   try {
     const ctx = getAudioContext();
@@ -154,13 +164,10 @@ function playCuteBuzzer() {
       osc.stop(now + idx * 0.12 + 0.2);
     });
 
-    logSim('🔊 [3V 蜂鳴器] 發出可愛提示音，提醒長輩有新訊息！');
+    logSim('🔊 [3V 蜂鳴器] 發出可愛三重提示音，提醒長輩看新訊息！');
   } catch (err) {}
 }
 
-/**
- * 實體微動開關機械按壓 Click 音效
- */
 function playSwitchClick() {
   try {
     const ctx = getAudioContext();
@@ -169,10 +176,10 @@ function playSwitchClick() {
     const gain = ctx.createGain();
 
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.setValueAtTime(140, now);
     osc.frequency.exponentialRampToValueAtTime(30, now + 0.04);
 
-    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.setValueAtTime(0.35, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
     osc.connect(gain);
@@ -183,9 +190,6 @@ function playSwitchClick() {
   } catch (err) {}
 }
 
-/**
- * 刷新完成時的確認音 (Success Ding)
- */
 function playSuccessDing() {
   try {
     const ctx = getAudioContext();
@@ -194,7 +198,7 @@ function playSuccessDing() {
     const gain = ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, now); // A5
+    osc.frequency.setValueAtTime(880, now);
 
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
@@ -212,8 +216,77 @@ function logSim(msg) {
   simLogs.innerHTML = `[${time}] ${msg}<br>` + simLogs.innerHTML;
 }
 
+// 彈出手機端長輩已讀通知
+function showAppPushToast(title, desc) {
+  toastTitle.textContent = title;
+  toastDesc.textContent = desc;
+  appPushToast.classList.add('show');
+  setTimeout(() => {
+    appPushToast.classList.remove('show');
+  }, 4500);
+}
+
 // ==============================================================================
-// 2. 關懷卡 Canvas 視覺設計引擎 (App 端 400x600 即時渲染)
+// 2. 子女手繪簽名板 (Canvas Handwriting / Signature)
+// ==============================================================================
+
+function initSignatureCanvas() {
+  if (!signatureCanvas) return;
+  const ctx = signatureCanvas.getContext('2d');
+  ctx.strokeStyle = '#dc2626';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  function startPos(e) {
+    isDrawing = true;
+    hasSignature = true;
+    draw(e);
+  }
+
+  function endPos() {
+    isDrawing = false;
+    ctx.beginPath();
+    renderDesignerCanvas(); // 手寫筆畫更新時即時重繪至大卡片中
+  }
+
+  function getCanvasPos(e) {
+    const rect = signatureCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * (signatureCanvas.width / rect.width),
+      y: (clientY - rect.top) * (signatureCanvas.height / rect.height)
+    };
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    const pos = getCanvasPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    e.preventDefault();
+  }
+
+  signatureCanvas.addEventListener('mousedown', startPos);
+  signatureCanvas.addEventListener('mouseup', endPos);
+  signatureCanvas.addEventListener('mousemove', draw);
+
+  signatureCanvas.addEventListener('touchstart', startPos, { passive: false });
+  signatureCanvas.addEventListener('touchend', endPos);
+  signatureCanvas.addEventListener('touchmove', draw, { passive: false });
+
+  btnClearSignature.addEventListener('click', () => {
+    ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    hasSignature = false;
+    renderDesignerCanvas();
+  });
+}
+
+// ==============================================================================
+// 3. 關懷卡 Canvas 視覺設計引擎 (App 端 400x600 即時渲染)
 // ==============================================================================
 
 function renderDesignerCanvas() {
@@ -226,7 +299,7 @@ function renderDesignerCanvas() {
   ctx.fillStyle = '#fbfbf9';
   ctx.fillRect(0, 0, w, h);
 
-  // 2. 邊框裝飾 (採用選定之主題色)
+  // 2. 邊框裝飾
   ctx.strokeStyle = selectedColor;
   ctx.lineWidth = 8;
   ctx.strokeRect(10, 10, w - 20, h - 20);
@@ -248,18 +321,18 @@ function renderDesignerCanvas() {
   // 3. 繪製照片 (若有上傳)
   let contentStartY = 280;
   if (uploadedPhoto) {
-    const photoH = 180;
+    const photoH = 170;
     const photoW = w - 60;
-    ctx.drawImage(uploadedPhoto, 30, 60, photoW, photoH);
+    ctx.drawImage(uploadedPhoto, 30, 56, photoW, photoH);
     ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 2;
-    ctx.strokeRect(30, 60, photoW, photoH);
-    contentStartY = 270;
+    ctx.strokeRect(30, 56, photoW, photoH);
+    contentStartY = 265;
   } else {
-    // 若無照片，繪製大尺寸 Emoji 居中標誌
+    // 繪製大尺寸 Emoji 居中標誌
     ctx.font = '64px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(selectedEmoji, w / 2, 140);
+    ctx.fillText(selectedEmoji, w / 2, 135);
   }
 
   // 4. 繪製主標題
@@ -267,32 +340,41 @@ function renderDesignerCanvas() {
   ctx.fillStyle = selectedColor;
   ctx.font = 'bold 28px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(titleText, w / 2, uploadedPhoto ? contentStartY : 190);
+  ctx.fillText(titleText, w / 2, uploadedPhoto ? contentStartY : 185);
 
   // 分隔線
   ctx.fillStyle = selectedColor;
-  const divY = uploadedPhoto ? contentStartY + 12 : 205;
+  const divY = uploadedPhoto ? contentStartY + 12 : 200;
   ctx.fillRect(w / 2 - 35, divY, 70, 4);
 
-  // 5. 繪製關懷內文 (長輩友善大字體，支援自動折行)
+  // 5. 繪製關懷內文 (依字體大小動態調整行高)
   const contentText = designContent.value.trim() || '祝奶奶天天開心，身體健康！';
   ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 22px sans-serif';
+  ctx.font = `bold ${currentFontSize}px sans-serif`;
   ctx.textAlign = 'center';
 
   const maxLineWidth = w - 60;
-  const startY = uploadedPhoto ? contentStartY + 45 : 250;
-  wrapCanvasText(ctx, contentText, w / 2, startY, maxLineWidth, 34);
+  const lineHeight = currentFontSize + 12;
+  const startY = uploadedPhoto ? contentStartY + 45 : 245;
+  wrapCanvasText(ctx, contentText, w / 2, startY, maxLineWidth, lineHeight);
 
-  // 6. 底部署名
-  const authorText = designAuthor.value.trim() || '兒女們敬上';
-  ctx.fillStyle = '#64748b';
-  ctx.font = 'bold 16px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`❤️ ${authorText}`, w / 2, h - 35);
+  // 6. 親筆手寫簽名合成 (若有簽名則畫於底部，否則顯示純文字作者)
+  if (hasSignature && signatureCanvas) {
+    const sigW = 180;
+    const sigH = 45;
+    ctx.drawImage(signatureCanvas, (w - sigW) / 2, h - 70, sigW, sigH);
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('親筆署名 ❤️', w / 2, h - 18);
+  } else {
+    const authorText = designAuthor.value.trim() || '兒女們敬上';
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`❤️ ${authorText}`, w / 2, h - 35);
+  }
 }
 
-// 輔助函式：Canvas 文字自動折行
 function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
   const chars = text.split('');
   let line = '';
@@ -312,12 +394,33 @@ function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line, x, currentY);
 }
 
-// 監聽設計器輸入變化，即時重繪 Canvas
+// 監聽文字輸入變化
 [designTitle, designContent, designAuthor].forEach(input => {
   input.addEventListener('input', renderDesignerCanvas);
 });
 
-// Emoji 選擇切換
+// 長輩字體大小選擇器切換
+fontSizeSelector.addEventListener('click', (e) => {
+  if (e.target.classList.contains('font-btn')) {
+    document.querySelectorAll('.font-btn').forEach(btn => btn.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFontSize = parseInt(e.target.getAttribute('data-size'), 10);
+    renderDesignerCanvas();
+  }
+});
+
+// 常用短語庫一鍵填寫
+quickPhrases.addEventListener('click', (e) => {
+  if (e.target.classList.contains('pill')) {
+    const text = e.target.getAttribute('data-text');
+    const title = e.target.getAttribute('data-title');
+    designContent.value = text;
+    designTitle.value = title;
+    renderDesignerCanvas();
+  }
+});
+
+// Emoji 切換
 emojiPicker.addEventListener('click', (e) => {
   if (e.target.classList.contains('emoji-opt')) {
     document.querySelectorAll('.emoji-opt').forEach(opt => opt.classList.remove('selected'));
@@ -327,7 +430,7 @@ emojiPicker.addEventListener('click', (e) => {
   }
 });
 
-// 主題色切換
+// 顏色切換
 colorPicker.addEventListener('click', (e) => {
   if (e.target.classList.contains('dot')) {
     document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected'));
@@ -366,12 +469,10 @@ templateSelector.addEventListener('click', (e) => {
       designContent.value = '小孫女這週末考完試，吵著要回去吃奶奶親手炸的年糕！';
     }
 
-    // 更新 Emoji 選取狀態
     document.querySelectorAll('.emoji-opt').forEach(opt => {
       opt.classList.toggle('selected', opt.textContent === selectedEmoji);
     });
 
-    // 更新顏色選取狀態
     document.querySelectorAll('.dot').forEach(d => {
       d.classList.toggle('selected', d.getAttribute('data-color') === selectedColor);
     });
@@ -398,7 +499,7 @@ designPhotoInput.addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// 發送卡片按鈕
+// 發送卡片至客廳
 document.getElementById('btnSendDesign').addEventListener('click', () => {
   const title = designTitle.value.trim() || "家人關懷問候";
   const content = designContent.value.trim();
@@ -421,7 +522,7 @@ document.getElementById('btnSendDesign').addEventListener('click', () => {
 });
 
 // ==============================================================================
-// 3. 5 分鐘 RTC 定時喚醒機制 (Power-Saving Polling Engine)
+// 4. 5 分鐘 RTC 定時喚醒機制 (Power-Saving Polling Engine)
 // ==============================================================================
 
 function startPollingEngine() {
@@ -433,7 +534,7 @@ function startPollingEngine() {
     pollTimeRemaining--;
     if (pollTimeRemaining <= 0) {
       pollTimeRemaining = POLL_INTERVAL_SECONDS;
-      checkNewMessagesOnServer(); // 5 分鐘 RTC 喚醒
+      checkNewMessagesOnServer();
     }
     updateTimerDisplay();
   }, 1000);
@@ -461,7 +562,6 @@ function triggerDeviceAlert(msg) {
   buttonHint.style.display = 'block';
   btnDeviceConfirm.classList.add('glowing');
 
-  // 發出一聲可愛蜂鳴音
   playCuteBuzzer();
   logSim(`🔔 [通知觸發] 暖黃/綠色 LED 呼吸閃爍中！長輩請按壓實體「我看到了」按鈕。`);
 }
@@ -474,27 +574,21 @@ function resetDeviceAlert() {
 }
 
 // ==============================================================================
-// 4. 客廳實體大按鈕 ＋ 3.8 秒分階段電子紙顆粒物理刷新
+// 5. 客廳實體大按鈕 ＋ 3.8 秒分階段電子紙顆粒物理刷新
 // ==============================================================================
 
 btnDeviceConfirm.addEventListener('click', () => {
-  // 撥放實體開關 Click 音
   playSwitchClick();
   logSim('👆 [實體按鍵] 長輩按下了大顆「我看到了 / 收到」確認按鈕！');
   trigger3p8sRefresh();
 });
 
-/**
- * 執行 3.8 秒電子紙物理偏轉刷新 (分 4 階段展示)
- */
 function trigger3p8sRefresh() {
   btnDeviceConfirm.disabled = true;
   refreshOverlay.classList.add('active');
 
   let remaining = 3.8;
   refreshTimer.textContent = `${remaining.toFixed(1)}s`;
-
-  // 分階段說明
   refreshPhaseTitle.textContent = '【階段 1】全黑清除 (Clear Black)...';
 
   const countTimer = setInterval(() => {
@@ -513,7 +607,6 @@ function trigger3p8sRefresh() {
     }
   }, 100);
 
-  // 3.8 秒倒數結束，畫面呈現
   setTimeout(() => {
     refreshOverlay.classList.remove('active');
     btnDeviceConfirm.disabled = false;
@@ -523,6 +616,10 @@ function trigger3p8sRefresh() {
       updateMessageStatusInHistory(pendingMessage.id, 'read');
       logSim(`✨ [刷新完成] 3.8 秒顯示完成！長輩已閱讀確認，已回傳 ACK 至雲端。`);
       
+      // 子女端手機同步收到長輩已讀通知彈窗！
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      showAppPushToast(`奶奶於 ${timeStr} 按下了「我看到了」！`, `客廳 E-Care 電子紙已完成 3.8s 刷新，安心確認。`);
+
       pendingMessage = null;
       localStorage.removeItem(STORAGE_KEYS.PENDING);
       resetDeviceAlert();
@@ -536,9 +633,6 @@ function trigger3p8sRefresh() {
   }, 3800);
 }
 
-/**
- * 將訊息渲染至客廳電子紙螢幕 DOM
- */
 function applyMessageToDeviceScreen(msg) {
   const clockStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   epdClock.textContent = clockStr;
@@ -587,7 +681,7 @@ function cycleNextCarouselMessage() {
 }
 
 // ==============================================================================
-// 5. App 分頁與各模組管理 (App Features)
+// 6. App 分頁導覽與模組管理
 // ==============================================================================
 
 tabButtons.forEach(btn => {
@@ -765,7 +859,6 @@ function updateMessageStatusInHistory(id, newStatus) {
   }
 }
 
-// 佇列新訊息到伺服器
 function queueNewMessage(msg) {
   pendingMessage = msg;
   localStorage.setItem(STORAGE_KEYS.PENDING, JSON.stringify(pendingMessage));
@@ -783,8 +876,6 @@ function queueNewMessage(msg) {
   renderHistoryTable();
 
   logSim(`📤 [App發送] 遠端傳送新訊息:「${msg.content.substring(0, 16)}...」已上傳至雲端。`);
-
-  // 立即觸發裝置提示
   triggerDeviceAlert(pendingMessage);
 }
 
@@ -797,7 +888,7 @@ btnSimulateNfc.addEventListener('click', () => {
 });
 
 // ==============================================================================
-// 6. 全彩 (Gallery Palette/ACeP) 與 黑紅白三色 (BWR) 色域模式切換
+// 7. 色域模式 (全彩 vs 三色) 與 墨水微粒放大鏡檢視
 // ==============================================================================
 
 function setDisplayMode(mode) {
@@ -822,7 +913,15 @@ function setDisplayMode(mode) {
 btnModeColor.addEventListener('click', () => setDisplayMode('color'));
 btnModeTri.addEventListener('click', () => setDisplayMode('tri'));
 
-// 快捷模擬按鈕
+// 墨水微粒放大鏡切換
+btnZoomToggle.addEventListener('click', () => {
+  epaperScreen.classList.toggle('pixel-zoom-mode');
+  const isZoom = epaperScreen.classList.contains('pixel-zoom-mode');
+  btnZoomToggle.classList.toggle('active', isZoom);
+  logSim(isZoom ? '🔍 [特寫檢視] 已開啟電子紙微米紙紋與顆粒漫反射模擬。' : '🔍 [標準檢視] 恢復標準縮放比例。');
+});
+
+// 快捷模擬推播按鈕
 btnQuickDemo.addEventListener('click', () => {
   const sampleMessages = [
     { title: "降血壓藥吃囉！", emoji: "💊", text: "奶奶，現在是吃晚藥時間，請配溫開水吃一顆喔！", color: "#dc2626" },
@@ -859,9 +958,10 @@ btnResetAll.addEventListener('click', () => {
 });
 
 // ==============================================================================
-// 7. 系統開機初始化
+// 8. 系統開機初始化
 // ==============================================================================
 window.addEventListener('DOMContentLoaded', () => {
+  initSignatureCanvas();
   renderCarouselList();
   renderScheduleList();
   renderHistoryTable();
