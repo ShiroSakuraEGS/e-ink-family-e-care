@@ -583,12 +583,40 @@ function queueNewMessage(msg) {
   triggerDeviceAlert(pendingMessage);
 }
 
-// --- 功能 6: 設定儲存 ---
+// --- 功能 6: 設定儲存與 NFC 模擬一碰配網 ---
 document.getElementById('btnSaveConfig').addEventListener('click', () => {
   const ssid = document.getElementById('cfgWifiSsid').value;
   alert(`Wi-Fi 連線設定「${ssid}」已儲存，並同步更新至裝置 EC-8823！`);
   logSim(`⚙️ [設定更新] 裝置 Wi-Fi 配網成功: SSID=${ssid}`);
 });
+
+const btnSimulateNfc = document.getElementById('btnSimulateNfc');
+if (btnSimulateNfc) {
+  btnSimulateNfc.addEventListener('click', () => {
+    const ssid = document.getElementById('cfgWifiSsid').value;
+    playCuteBuzzer();
+    alert(`📱 [NFC 觸碰成功] 手機已透過 NFC NDEF 將 Wi-Fi 設定（SSID: ${ssid}）快速寫入客廳裝置！\n日常遠端訊息將由 Wi-Fi 負責接收。`);
+    logSim(`🏷️ [NFC配網] 手機一碰配網成功: 寫入 Wi-Fi (${ssid})，裝置已連上家用路由器。`);
+  });
+}
+
+// --- 側邊微動按鈕 (G-2): 上一則 / 下一則手動翻頁 ---
+const btnSidePrev = document.getElementById('btnSidePrev');
+const btnSideNext = document.getElementById('btnSideNext');
+
+if (btnSidePrev) {
+  btnSidePrev.addEventListener('click', () => {
+    logSim('◀ [側邊按鈕] 長輩按下了側邊「上一則」微動按鍵。');
+    trigger3p8sRefresh();
+  });
+}
+
+if (btnSideNext) {
+  btnSideNext.addEventListener('click', () => {
+    logSim('▶ [側邊按鈕] 長輩按下了側邊「下一則」微動按鍵。');
+    trigger3p8sRefresh();
+  });
+}
 
 // ==============================================================================
 // 5. 測試面板與快速模擬 (Demo Helpers)

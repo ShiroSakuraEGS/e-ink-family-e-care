@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family e-Care — 遠端家庭關懷電子紙系統</title>
+  <title>Family E-Care — 遠端家庭關懷電子紙系統</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,12 +13,13 @@
       <div class="brand">
         <span class="brand-icon">🌱</span>
         <div class="brand-text">
-          <h1>Family e-Care</h1>
-          <span class="subtext">遠端長輩關懷與智慧電子紙系統 Prototype</span>
+          <h1>Family E-Care</h1>
+          <span class="subtext">遠端長輩關懷與智慧電子紙系統 (BOM & Prototype 驗證)</span>
         </div>
       </div>
       <div class="nav-controls">
-        <span class="device-pill online" id="globalDeviceStatus">🟢 裝置已連線 (ID: EC-8823)</span>
+        <span class="device-pill online" id="globalDeviceStatus">🟢 裝置 Wi-Fi 已連線 (ID: EC-8823)</span>
+        <span class="battery-pill">🔋 350mAh 鋰電: 96%</span>
         <button id="btnQuickDemo" class="btn-demo">⚡ 模擬新訊息推播</button>
       </div>
     </header>
@@ -37,16 +38,16 @@
             <span>5G 100%</span>
           </div>
           <div class="app-top-bar">
-            <h2>客廳 e-Care 裝置</h2>
+            <h2>客廳 E-Care 裝置</h2>
             <span class="avatar">👵 奶奶的家</span>
           </div>
           <!-- App 功能分頁標籤 -->
           <nav class="app-tabs">
             <button class="tab-btn active" data-tab="tab-carousel">🔄 輪播訊息</button>
-            <button class="tab-btn" data-tab="tab-schedule">⏰ 排程訊息</button>
+            <button class="tab-btn" data-tab="tab-schedule">⏰ 排程提醒</button>
             <button class="tab-btn" data-tab="tab-designer">🎨 圖像 Emoji</button>
             <button class="tab-btn" data-tab="tab-history">📋 訊息庫</button>
-            <button class="tab-btn" data-tab="tab-settings">⚙️ 設定</button>
+            <button class="tab-btn" data-tab="tab-settings">⚙️ 設備與配網</button>
           </nav>
         </div>
 
@@ -55,13 +56,13 @@
           <div id="tab-carousel" class="tab-content active">
             <div class="section-title">
               <h3>客廳常態輪播訊息</h3>
-              <p>自動按順序在裝置上輪流播放的關懷文字</p>
+              <p>自動按順序在裝置上輪流播放的關懷文字（長輩可由側邊鍵翻閱）</p>
             </div>
             
             <div class="input-card">
               <textarea id="carouselInput" placeholder="輸入想跟長輩說的話... 例如：『奶奶早安！今天天氣變冷了，出門記得多穿件外套喔 ❤️』" rows="3"></textarea>
               <div class="card-footer">
-                <span class="tag">輪播間隔: 30 分鐘</span>
+                <span class="tag">模式: RTC 定時喚醒輪換</span>
                 <button id="btnAddCarousel" class="btn btn-primary btn-sm">＋ 加入輪播</button>
               </div>
             </div>
@@ -75,7 +76,7 @@
           <div id="tab-schedule" class="tab-content">
             <div class="section-title">
               <h3>預約定時提醒</h3>
-              <p>在指定時間將自動觸發裝置綠色 LED 與蜂鳴器提醒</p>
+              <p>在指定時間將自動觸發裝置 LED 呼吸燈與蜂鳴器，提醒長輩吃藥或門診</p>
             </div>
 
             <div class="input-card">
@@ -83,9 +84,9 @@
               <div class="form-grid">
                 <select id="scheduleCategory" class="input-field">
                   <option value="med">💊 服藥提醒</option>
-                  <option value="clinic">🏥 門診醫院</option>
+                  <option value="clinic">🏥 門診就醫</option>
                   <option value="walk">🚶 散步運動</option>
-                  <option value="family">💌 家人祝賀</option>
+                  <option value="family">💌 家人問候</option>
                 </select>
                 <input type="time" id="scheduleTime" class="input-field" value="20:00">
               </div>
@@ -98,11 +99,11 @@
             </div>
           </div>
 
-          <!-- 分頁 3: 圖像設計器 (文字 + Emoji + Spectra 6) -->
+          <!-- 分頁 3: 圖像設計器 (文字 + Emoji + 電子紙調色盤) -->
           <div id="tab-designer" class="tab-content">
             <div class="section-title">
               <h3>關懷卡片與 Emoji 設計</h3>
-              <p>專為 Spectra 6 400×600 電子紙設計的視覺化卡片</p>
+              <p>專為 4–6 吋全彩/有限色彩電子紙設計的低功耗視覺卡片</p>
             </div>
 
             <div class="designer-controls">
@@ -125,25 +126,25 @@
               <textarea id="designContent" rows="3">奶奶，我們這週六回去看您！給您帶最喜歡吃的紅豆年糕喔！</textarea>
 
               <div class="color-picker-row">
-                <label>強調底色 (Spectra 6):</label>
+                <label>強調底色 (全彩 / 黑紅白調色盤):</label>
                 <div class="color-dots" id="colorPicker">
-                  <div class="dot color-red selected" data-color="#dc2626"></div>
-                  <div class="dot color-yellow" data-color="#d97706"></div>
-                  <div class="dot color-blue" data-color="#2563eb"></div>
-                  <div class="dot color-green" data-color="#16a34a"></div>
-                  <div class="dot color-black" data-color="#000000"></div>
+                  <div class="dot color-red selected" data-color="#dc2626" title="紅色"></div>
+                  <div class="dot color-yellow" data-color="#d97706" title="暖黃色"></div>
+                  <div class="dot color-blue" data-color="#2563eb" title="藍色"></div>
+                  <div class="dot color-green" data-color="#16a34a" title="綠色"></div>
+                  <div class="dot color-black" data-color="#000000" title="黑色"></div>
                 </div>
               </div>
 
-              <button id="btnSendDesign" class="btn btn-success btn-block">🚀 發送卡片至裝置</button>
+              <button id="btnSendDesign" class="btn btn-success btn-block">🚀 雲端發送至長輩裝置</button>
             </div>
           </div>
 
           <!-- 分頁 4: 訊息資料庫 (狀態追蹤) -->
           <div id="tab-history" class="tab-content">
             <div class="section-title">
-              <h3>訊息資料庫與狀態追蹤</h3>
-              <p>查看長輩是否已按按鈕閱讀與更新螢幕</p>
+              <h3>訊息資料庫與閱讀確認</h3>
+              <p>即時追蹤長輩是否已按下實體「看到了」按鈕確認回傳</p>
             </div>
 
             <div class="stats-bar">
@@ -153,11 +154,11 @@
               </div>
               <div class="stat-item">
                 <span class="stat-num text-success" id="statRead">0</span>
-                <span class="stat-label">已按鈕確認</span>
+                <span class="stat-label">長輩已按鍵確認</span>
               </div>
               <div class="stat-item">
                 <span class="stat-num text-warning" id="statPending">0</span>
-                <span class="stat-label">等待長輩閱讀</span>
+                <span class="stat-label">等待長輩按鍵</span>
               </div>
             </div>
 
@@ -168,7 +169,7 @@
                     <th>時間</th>
                     <th>類型</th>
                     <th>內容摘錄</th>
-                    <th>長輩按鈕狀態</th>
+                    <th>「看到了」狀態</th>
                   </tr>
                 </thead>
                 <tbody id="historyTableBody">
@@ -178,42 +179,39 @@
             </div>
           </div>
 
-          <!-- 分頁 5: 設定 (綁定裝置與 WiFi) -->
+          <!-- 分頁 5: 設定 (NFC 配網與系統設定) -->
           <div id="tab-settings" class="tab-content">
             <div class="section-title">
-              <h3>裝置與連線設定</h3>
-              <p>遠端管理客廳 e-Care 裝置與家用 Wi-Fi</p>
+              <h3>NFC 快速配網與電源管理</h3>
+              <p>初次設定僅需手機一碰 NFC，日常由 Wi-Fi 與 350mAh 電池運作</p>
             </div>
 
             <div class="setting-card">
-              <h4>🔗 裝置綁定</h4>
+              <h4>📲 NFC 一碰配網 (Provisioning)</h4>
+              <p class="setting-desc">將手機背面貼近裝置 NFC 標籤區域，即可自動將家用 Wi-Fi 寫入裝置：</p>
               <div class="form-group">
-                <label>裝置識別碼 (Device ID)</label>
-                <input type="text" id="cfgDeviceId" value="EC-8823" class="input-field" readonly>
+                <label>家用 Wi-Fi 網路名稱 (SSID)</label>
+                <input type="text" id="cfgWifiSsid" value="Home_Care_2.4G" class="input-field">
               </div>
               <div class="form-group">
-                <label>裝置擁有者稱謂</label>
-                <input type="text" id="cfgOwner" value="奶奶的客廳" class="input-field">
+                <label>家用 Wi-Fi 密碼</label>
+                <input type="password" id="cfgWifiPass" value="GrandmaCare2026" class="input-field">
               </div>
+              <button id="btnSimulateNfc" class="btn btn-warning btn-block">📱 模擬手機 NFC 觸碰寫入配網</button>
             </div>
 
             <div class="setting-card">
-              <h4>📶 居家 Wi-Fi 配網</h4>
-              <div class="form-group">
-                <label>Wi-Fi 網路名稱 (SSID)</label>
-                <input type="text" id="cfgWifiSsid" value="Home_Care_5G" class="input-field">
-              </div>
-              <div class="form-group">
-                <label>Wi-Fi 密碼</label>
-                <input type="password" id="cfgWifiPass" value="CareGrandma2026" class="input-field">
-              </div>
-              <button id="btnSaveConfig" class="btn btn-primary btn-block">💾 儲存並發送配網設定</button>
+              <h4>🔋 350mAh 低功耗休眠策略</h4>
+              <p class="setting-desc">主控 MCU：<strong>STM32L4 / ESP32-C3</strong> (Deep Sleep < 15µA)</p>
+              <p class="setting-desc">定時喚醒：<strong>每 5 分鐘</strong> 短暫開啟 Wi-Fi 查詢雲端 (耗時 ~1.5s)</p>
+              <p class="setting-desc">預估續航：<strong>35~45 天</strong> (每日按鈕確認約 5~8 次)</p>
             </div>
 
             <div class="setting-card">
-              <h4>⚙️ 裝置運作參數</h4>
-              <p class="setting-desc">輪詢週期：<strong>每 5 分鐘</strong> 檢查一次雲端新訊息</p>
-              <p class="setting-desc">更新延遲：長輩按下按鈕後 <strong>3.8 秒</strong> 擬真翻頁刷新</p>
+              <h4>🏷️ 設備資訊</h4>
+              <p class="setting-desc">裝置型號：<strong>Family E-Care Prototype (BOM Ver 1.0)</strong></p>
+              <p class="setting-desc">目標量產建議售價：<strong>NT$2,000 以內</strong></p>
+              <p class="setting-desc">充電介面：<strong>USB Type-C (5V/1A)</strong></p>
             </div>
           </div>
         </div>
@@ -224,62 +222,74 @@
       <!-- ========================================================= -->
       <section class="device-simulator">
         <div class="simulator-panel-header">
-          <div class="sim-badge">實體硬體模擬器 (客廳 e-Care 裝置)</div>
+          <div class="sim-badge">實體硬體模擬器 (BOM 採購驗證機)</div>
           <div class="sim-timer-info">
-            <span>下次自動輪詢：</span>
+            <span>RTC 下次定時喚醒：</span>
             <span id="pollCountdown" class="countdown-tag">04:59</span>
           </div>
         </div>
 
-        <!-- 擬真實體機身外殼 (溫潤白圓角木質邊框) -->
-        <div class="device-casing">
-          <!-- 頂部指示燈與蜂鳴孔 -->
-          <div class="device-top-panel">
-            <div class="led-container">
-              <div class="led-indicator" id="deviceLed"></div>
-              <span class="led-label" id="ledLabel">待機中 (無新訊息)</span>
-            </div>
-            <div class="buzzer-holes" title="可愛蜂鳴器喇叭孔">
-              <span>•</span><span>•</span><span>•</span><span>•</span>
-            </div>
+        <!-- 擬真實體機身外殼 (溫潤白圓角木質邊框 + 側邊按鈕) -->
+        <div class="device-wrapper">
+          
+          <!-- 側邊換頁按鍵 (G-2 微動開關) -->
+          <div class="side-buttons">
+            <button class="side-btn" id="btnSidePrev" title="上一則訊息 (側邊換頁)">▲</button>
+            <button class="side-btn" id="btnSideNext" title="下一則訊息 (側邊換頁)">▼</button>
           </div>
 
-          <!-- 3.6 吋 Spectra 6 電子紙螢幕視窗 (400x600 比例) -->
-          <div class="epaper-screen-frame">
-            <div class="epaper-screen" id="epaperScreen">
-              <!-- 刷新覆蓋顆粒特效層 -->
-              <div class="refresh-overlay" id="refreshOverlay">
-                <div class="refresh-spinner"></div>
-                <div class="refresh-text">Spectra 6 顆粒翻轉刷新中...<br><span id="refreshTimer">3.8s</span></div>
+          <div class="device-casing">
+            <!-- 頂部指示燈、NFC 感應區與蜂鳴孔 -->
+            <div class="device-top-panel">
+              <div class="led-container">
+                <div class="led-indicator" id="deviceLed"></div>
+                <span class="led-label" id="ledLabel">休眠待機中 (無新訊息)</span>
               </div>
+              <div class="nfc-area-badge" title="手機初次配對觸碰點">🏷️ NFC 感應區</div>
+              <div class="buzzer-holes" title="3V 壓電蜂鳴器喇叭孔">
+                <span>•</span><span>•</span><span>•</span><span>•</span>
+              </div>
+            </div>
 
-              <!-- 電子紙真實顯示畫面 -->
-              <div class="epaper-content" id="epaperContent">
-                <!-- 預設歡迎畫面 -->
-                <div class="epd-header-bar">
-                  <span class="epd-brand">Family e-Care</span>
-                  <span class="epd-time" id="epdClock">12:00</span>
+            <!-- 4~6 吋電子紙螢幕視窗 (含壓克力抗眩前保護蓋板) -->
+            <div class="epaper-screen-frame">
+              <div class="epaper-screen" id="epaperScreen">
+                <!-- 3.8 秒靜態刷新覆蓋顆粒特效層 -->
+                <div class="refresh-overlay" id="refreshOverlay">
+                  <div class="refresh-spinner"></div>
+                  <div class="refresh-text">電子紙顆粒物理刷新中...<br><span id="refreshTimer">3.8s</span></div>
                 </div>
-                <div class="epd-body">
-                  <div class="epd-emoji-badge">🌸</div>
-                  <h2 class="epd-title">早安，奶奶！</h2>
-                  <div class="epd-divider"></div>
-                  <p class="epd-text">今天天氣晴朗暖和，出門走走記得喝溫開水喔！</p>
-                  <div class="epd-footer-info">
-                    <span>❤️ 來自 兒女們的祝福</span>
+
+                <!-- 電子紙真實顯示畫面 (400x600 比例) -->
+                <div class="epaper-content" id="epaperContent">
+                  <div class="epd-header-bar">
+                    <span class="epd-brand">Family E-Care</span>
+                    <span class="epd-time" id="epdClock">12:00</span>
+                  </div>
+                  <div class="epd-body">
+                    <div class="epd-emoji-badge">🌸</div>
+                    <h2 class="epd-title">早安，奶奶！</h2>
+                    <div class="epd-divider"></div>
+                    <p class="epd-text">今天天氣晴朗暖和，出門走走記得喝溫開水喔！</p>
+                    <div class="epd-footer-info">
+                      <span>❤️ 來自 兒女們的祝福</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 裝置正面：長輩實體專用大按鈕 -->
-          <div class="device-controls">
-            <div class="button-hint" id="buttonHint">長輩請按這裡看新訊息 👇</div>
-            <button id="btnDeviceConfirm" class="physical-button">
-              <span class="btn-cap">⭕ 閱讀 / 更新螢幕</span>
-            </button>
-            <div class="device-model-label">Bagi (NFC) 3.6” Spectra 6 e-Care Edition</div>
+            <!-- 裝置正面：長輩專用實體大按鈕 (G-1 12x12mm 輕觸開關「看到了」) -->
+            <div class="device-controls">
+              <div class="button-hint" id="buttonHint">長輩收到請按大按鈕 👇</div>
+              <button id="btnDeviceConfirm" class="physical-button">
+                <span class="btn-cap">⭕ 我看到了 / 收到</span>
+              </button>
+              <div class="device-bottom-bar">
+                <span class="device-model-label">Family E-Care · 4~6” E-Ink Display</span>
+                <span class="type-c-port" title="USB Type-C 充電口">⚡ Type-C</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -287,12 +297,12 @@
         <div class="sim-debug-card">
           <h4>🧪 快速測試與模擬面板</h4>
           <div class="debug-actions">
-            <button id="btnTriggerPoll" class="btn btn-sm btn-secondary">⏱️ 立即執行 5 分鐘輪詢</button>
-            <button id="btnTestBuzzer" class="btn btn-sm btn-secondary">🔊 試聽可愛蜂鳴聲</button>
+            <button id="btnTriggerPoll" class="btn btn-sm btn-secondary">⏱️ 立即 RTC 定時喚醒輪詢</button>
+            <button id="btnTestBuzzer" class="btn btn-sm btn-secondary">🔊 試聽壓電蜂鳴音</button>
             <button id="btnResetAll" class="btn btn-sm btn-danger">🗑️ 重設資料庫</button>
           </div>
           <div class="debug-logs" id="simLogs">
-            [系統啟動] Family e-Care 智慧裝置已連線，每 5 分鐘自動輪詢一次。<br>
+            [系統啟動] Family E-Care 智慧裝置已就緒，處於低功耗 Deep Sleep 模式。<br>
           </div>
         </div>
       </section>

@@ -1,80 +1,123 @@
-# Bagi 3.6” Spectra 6 系統整合架構書 (System Architecture)
+# Family E-Care — 系統整合架構書 (System Architecture)
 
 ---
 
 ## 1. 系統整體拓撲圖 (Overall System Topology)
 
-本系統以雲端一體化與邊緣直連為設計理念，架構圖如下：
+Family E-Care 採用「**手機 App ＋ 雲端伺服器 ＋ 家用 Wi-Fi ＋ 裝置 Wi-Fi 模組**」架構，並以 **NFC 專責初次觸碰配對與快速配網**。
 
 ```mermaid
 graph TD
-    subgraph Client ["客戶端 (瀏覽器 - GitHub Pages)"]
-        UI["Web 控制台 (HTML5 + TailwindCSS)"]
-        Canvas["即時名牌編輯器 (Canvas / SVG)"]
-        Dither["前端六色 Floyd-Steinberg 抖動引擎"]
-        WebSerial["Web Serial API 控制器"]
+    subgraph MobileClient ["遠端子女端 (手機 App / Web)"]
+        AppUI["Family e-Care App"]
+        Designer["關懷卡片/Emoji 視覺編輯器"]
+        NfcWriter["手機 NFC (一碰傳遞 Wi-Fi 資訊)"]
+        HttpPoster["REST API Client (輪播/排程/即時訊息)"]
     end
 
-    subgraph Hardware ["評估套件硬體"]
-        Tx["NFC Tx 發射板 (Micro-USB)"]
-        Rx["NFC Rx 接收板"]
-        EPD["3.6 吋 Spectra 6 電子紙 (400x600)"]
+    subgraph CloudInfra ["雲端平台 (Render ＋ Supabase)"]
+        FastAPI["雲端 API 伺服器 (Render 微服務)"]
+        Postgres["訊息與設備資料庫 (Supabase PostgreSQL)"]
+        StatusTracker["狀態追蹤引擎 (已發送 / 等待長輩閱讀 / 已按鈕確認)"]
     end
 
-    subgraph CloudBackend ["雲端微服務 (Render)"]
-        API["FastAPI 應用伺服器"]
-        ImgEngine["Pillow / NumPy 影像處理流水線"]
-        BatchGen["批次名牌二進位生成器"]
+    subgraph HomeEnv ["長輩家中環境"]
+        HomeRouter["家庭 Wi-Fi AP (2.4GHz 802.11 b/g/n)"]
     end
 
-    subgraph CloudDB ["雲端後台 (Supabase)"]
-        Auth["Supabase Auth (身分驗證)"]
-        DB["PostgreSQL 資料庫 (名冊/版型/紀錄)"]
-        Storage["Storage Buckets (名牌圖片/Bin 檔)"]
+    subgraph HardwareDevice ["客廳 Family E-Care 實體裝置"]
+        NfcTag["NFC 標籤晶片 (PN532 / ST25DV)"]
+        WifiModule["低功耗 Wi-Fi 模組 (ESP32-C3)"]
+        McuCtrl["主控 MCU (STM32L4 / ESP32-C3)"]
+        PowerMgt["350mAh 鋰電池 + TP4056 Type-C 充電 + LDO"]
+        LedBuzzer["未讀指示 LED ＋ 3V 壓電蜂鳴器"]
+        ConfirmBtn["大顆實體「看到了」回傳按鈕"]
+        SideBtn["側邊換頁微動按鈕 (上/下)"]
+        EPD["4~6 吋電子紙螢幕 (4.01 全彩 / 4.2 三色)"]
     end
 
-    UI --> Canvas
-    Canvas --> Dither
-    Dither --> WebSerial
-    WebSerial -- "USB 序列埠 (115200 8-N-1)" --> Tx
-    Tx -- "NFC 13.56MHz RF 能量與資料" --> Rx
-    Rx --> EPD
+    %% 連線關係
+    NfcWriter -. "【初次設定】觸碰傳遞 SSID & Password" .-> NfcTag
+    NfcTag --> McuCtrl
 
-    UI -. "REST API (選用)" .-> API
-    API --> ImgEngine
-    ImgEngine --> Storage
-    API --> DB
+    AppUI --> Designer
+    Designer --> HttpPoster
+    HttpPoster -- "HTTPS / JSON (發送關懷訊息)" --> FastAPI
+    FastAPI --> Postgres
+    Postgres --> StatusTracker
 
-    UI -- "Supabase JS SDK (Anon)" --> DB
-    UI -- "讀取預存版型與卡片" --> Storage
+    McuCtrl <--> WifiModule
+    WifiModule <--> HomeRouter
+    HomeRouter <--> FastAPI
+
+    %% 狀態回傳
+    ConfirmBtn -- "長輩按壓「看到了」" --> McuCtrl
+    McuCtrl -- "回傳閱讀確認 (ACK)" --> WifiModule
+    McuCtrl --> EPD
+    McuCtrl --> LedBuzzer
+    PowerMgt --> McuCtrl
 ```
 
 ---
 
-## 2. GitHub Pages 前端直連設計 (Web Serial)
+## 2. 通訊角色精準分工 (NFC vs. Wi-Fi)
 
-### 為什麼選擇 Web Serial API？
-- **無需安裝驅動**：Windows 10/11 系統已原生自帶 STMicroelectronics USB VCP 驅動。
-- **免桌面安裝包**：使用者打開 GitHub Pages 網址（支援 HTTPS 即可存取 Web Serial），插上 Tx 板點擊「連線」即可開始刷卡。
-- **純客戶端離線運作**：內建 JavaScript 版 Floyd-Steinberg 抖動演算法與 4-bit 二進位封裝器，在沒有後端伺服器的情況下亦可單機完整運作。
-
----
-
-## 3. Render 雲端伺服器角色 (Cloud Backend)
-
-- **自動化批次生成**：針對大型會議或展覽，可上傳 Excel / CSV 嘉賓清單，由 Render 自動套版並批次產生數百張 120KB `.bin` 檔案。
-- **進階影像增強**：針對非標準色彩圖片進行色域校正、飽和度提升、清晰度銳化後再進行 6 色抖動。
-- **Render 免費/低成本佈署**：採用 Dockerfile 或 Python 原生環境，配置 `render.yaml` 實現一鍵 Blueprint 自動建置。
+| 通訊技術 | 角色定位 | 使用時機與傳輸內容 | 功耗考量 |
+| :--- | :--- | :--- | :--- |
+| **NFC (近場通訊)** | **設備初始化與快速配網** | • 新機拆箱或更換 Wi-Fi 時使用。<br>• 子女手機貼近裝置，透過 NDEF 寫入家用 Wi-Fi SSID 與密碼。<br>• **日常不參與遠端訊息傳輸**。 | 平時零功耗（無感應時不通電）。 |
+| **Wi-Fi (802.11 b/g/n)** | **日常遠距訊息接收與確認回報** | • 裝置自 Deep Sleep 喚醒，連線至家庭路由器。<br>• 向雲端輪詢新訊息 (HTTP GET / MQTT)。<br>• 長輩按下「看到了」實體按鍵時，回傳確認狀態 (ACK)。 | 連網時 80~120mA，平時深度休眠 (<15µA)。 |
 
 ---
 
-## 4. Supabase 雲端資料庫設計 (Supabase Backend)
+## 3. 350mAh 低功耗狀態機 (Power State Machine)
 
-- **PostgreSQL 資料表結構**：
-  - `badges`：存放名牌資料（姓名、公司、職稱、QR Code 內容、預覽圖 URL、產生之 bin 檔 URL）。
-  - `templates`：名牌樣式版型（背景圖、文字位置、字型大小、顏色對應）。
-  - `events`：活動專案管理。
-  - `transmission_logs`：刷卡傳輸稽核紀錄（裝置 COM Port、傳輸耗時、成功狀態）。
-- **Storage Buckets**：
-  - `badge-images`：儲存原始上傳圖檔與已抖動圖檔。
-  - `badge-bins`：儲存已編譯好之 120,000 Bytes `.bin` 檔案，前端可直接 Fetch 並傳送。
+為了讓 350mAh 鋰聚合物電池達到 **30~45 天以上的持久續航**，韌體執行嚴格的事件驅動與深度睡眠排程：
+
+```mermaid
+stateDiagram-v2
+    [*] --> DeepSleep: 開機初始化完成
+
+    state DeepSleep {
+        note right of DeepSleep: 靜態功耗 < 15µA\n關閉 Wi-Fi、螢幕與外設供電\n僅 RTC 保持計時
+    }
+
+    DeepSleep --> RTCWakeup: 每 5 分鐘 RTC 定時喚醒
+    DeepSleep --> ButtonWakeup: 長輩按下實體按鈕 (外部 GPIO 中斷)
+
+    state RTCWakeup {
+        [*] --> ConnectWifi: 開啟 ESP32 Wi-Fi
+        ConnectWifi --> CheckServer: 查詢雲端未讀訊息 (耗時約 1.5 秒)
+        
+        state "判斷是否有新訊息" as CheckResult <<choice>>
+        CheckServer --> CheckResult
+        
+        CheckResult --> AlertMode: 【有新訊息】
+        CheckResult --> GoSleep: 【無新訊息】
+    }
+
+    state AlertMode {
+        note right of AlertMode: 1. 綠色/暖黃 LED 呼吸閃爍\n2. 壓電蜂鳴器發出可愛提示音一次\n3. 等待長輩按壓實體鍵
+    }
+
+    AlertMode --> ButtonWakeup: 長輩察覺並按下「看到了」按鈕
+
+    state ButtonWakeup {
+        [*] --> SendAck: 連線 Wi-Fi 回報長輩已閱讀
+        SendAck --> RefreshEPD: 執行電子紙顆粒刷新 (約 3.8 秒)
+        RefreshEPD --> ClearAlert: 熄滅 LED
+        ClearAlert --> GoSleep: 準備休眠
+    }
+
+    GoSleep --> DeepSleep: 關閉所有外設進入深睡
+```
+
+---
+
+## 4. 雲端資料庫與狀態追蹤 (Supabase & Render)
+
+### 訊息生命週期狀態碼 (Message Lifecycle Status)
+1. **`draft` (草稿)**：子女在 App 上編輯中。
+2. **`queued` (已排程 / 待發送)**：到達指定排程時間前暫存。
+3. **`server_received` (已推送至雲端)**：訊息已存入 Supabase，等待裝置連線獲取。
+4. **`device_fetched` (裝置已抓取)**：裝置定時喚醒並下載訊息，此時觸發裝置 LED 呼吸閃爍與蜂鳴器。
+5. **`read_acknowledged` (長輩已按鈕確認)**：長輩走近按下實體「**看到了**」大按鈕，螢幕完成刷新，裝置回報 ACK，子女端 App 顯示綠色已讀打勾標記！

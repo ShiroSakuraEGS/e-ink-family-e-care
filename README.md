@@ -42,7 +42,8 @@ python -m http.server 8000
 
 ## 相關核心規格文件
 
-- [AGENTS.md (專案開發與多 Agent 協作規範)](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/AGENTS.md)
-- [產品知識庫 (Product Knowledge Base)](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/docs/PRODUCT_KNOWLEDGE_BASE.md)
-- [ST_Badge.exe 逆向工程與通訊協定規範書](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/docs/PROTOCOL_REVERSE_ENGINEERING.md)
-- [系統整合架構書](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/docs/ARCHITECTURE.md)
+- [**HARDWARE_SPEC_AND_BOM.md (產品規格說明書與完整物料清單 BOM)**](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/e-badge-platform/docs/HARDWARE_SPEC_AND_BOM.md)
+- [AGENTS.md (專案開發與多 Agent 協作規範)](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/e-badge-platform/AGENTS.md)
+- [產品知識庫 (Product Knowledge Base)](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/e-badge-platform/docs/PRODUCT_KNOWLEDGE_BASE.md)
+- [系統整合架構書 (System Architecture)](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/e-badge-platform/docs/ARCHITECTURE.md)
+- [ST_Badge.exe 逆向工程與通訊協定規範書](file:///C:/Users/Anubis.Chan/Downloads/E%20ink/e-badge-platform/docs/PROTOCOL_REVERSE_ENGINEERING.md)
