@@ -102,15 +102,23 @@ let selectedTriColor = "#c62828"; // 黑紅白中的緋紅
 // 1. Web Audio API 音效引擎 (微動開關 Click 音 ＋ 壓電蜂鳴音 ＋ NFC 音)
 // ==============================================================================
 let audioCtx = null;
+let audioUnlocked = false;
 
-function getAudioContext() {
+function unlockAudioFromGesture() {
+  audioUnlocked = true;
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
     audioCtx = new AudioContextClass();
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+}
+
+function getAudioContext() {
+  if (!audioUnlocked) return null;
+  unlockAudioFromGesture();
   return audioCtx;
 }
 
@@ -118,6 +126,7 @@ function getAudioContext() {
 function playCuteBuzzer() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 升調和弦
 
@@ -147,6 +156,7 @@ function playCuteBuzzer() {
 function playSwitchClick() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -170,6 +180,7 @@ function playSwitchClick() {
 function playSuccessDing() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -192,6 +203,7 @@ function playSuccessDing() {
 function playNfcSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -282,7 +294,7 @@ function evaluateSystemBroadcastState(manualTime = null, triggerRefresh = false)
     sysConfig.currentMode = 'schedule_active';
     updateModeBanner(
       `🔔 排程插播中：${matchedSchedule.title}`,
-      `時間已到 (${matchedSchedule.time})，客廳終端等待長輩按鍵確認`,
+      `時間已到 ${matchedSchedule.time}，等長輩按「我看到了」`,
       "等待確認"
     );
 
@@ -470,7 +482,8 @@ function renderDeviceScreen(msg) {
 
   if (textEl) {
     textEl.textContent = msg.content || "";
-    textEl.style.fontSize = `${currentFontSize}px`;
+    const relative = Math.max(3.2, Math.min(5.2, (currentFontSize / 600) * 100));
+    textEl.style.fontSize = `${relative}cqi`;
   }
 
   if (emojiEl) {
@@ -1043,10 +1056,14 @@ function initEventBindings() {
   // 底部導航切換
   document.querySelectorAll('.nav-tab-item').forEach(item => {
     item.addEventListener('click', () => {
-      document.querySelectorAll('.nav-tab-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.nav-tab-item').forEach(i => {
+        i.classList.remove('active');
+        i.removeAttribute('aria-current');
+      });
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
       item.classList.add('active');
+      item.setAttribute('aria-current', 'page');
       const targetId = item.getAttribute('data-tab');
       document.getElementById(targetId)?.classList.add('active');
 
@@ -1145,7 +1162,9 @@ function initEventBindings() {
 
       // 同步 Emoji
       document.querySelectorAll('#emojiPicker .emoji-circle').forEach(ec => {
-        ec.classList.toggle('selected', ec.textContent.trim() === selectedEmoji);
+        const on = ec.textContent.trim() === selectedEmoji;
+        ec.classList.toggle('selected', on);
+        ec.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
 
       if (window.redrawDesignerCanvas) window.redrawDesignerCanvas();
@@ -1175,8 +1194,12 @@ function initEventBindings() {
   // Emoji 挑選
   document.querySelectorAll('#emojiPicker .emoji-circle').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#emojiPicker .emoji-circle').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('#emojiPicker .emoji-circle').forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('selected');
+      btn.setAttribute('aria-pressed', 'true');
       selectedEmoji = btn.textContent.trim();
       if (window.redrawDesignerCanvas) window.redrawDesignerCanvas();
     });
@@ -1237,7 +1260,9 @@ function initEventBindings() {
 
     // 同步 Emoji UI
     document.querySelectorAll('#emojiPicker .emoji-circle').forEach(ec => {
-      ec.classList.toggle('selected', ec.textContent.trim() === selectedEmoji);
+      const on = ec.textContent.trim() === selectedEmoji;
+      ec.classList.toggle('selected', on);
+      ec.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
 
     if (window.redrawDesignerCanvas) window.redrawDesignerCanvas();
@@ -1368,6 +1393,8 @@ function initEventBindings() {
 }
 
 // 啟動主流程
+window.addEventListener('pointerdown', unlockAudioFromGesture, { once: true });
+
 window.addEventListener('DOMContentLoaded', () => {
   initDesignerCanvas();
   initSignaturePad();
