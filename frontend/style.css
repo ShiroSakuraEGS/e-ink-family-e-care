@@ -121,13 +121,14 @@ body {
 }
 
 .btn {
-  padding: 8px 16px;
-  font-size: 0.95rem;
-  font-weight: 500;
+  padding: 10px 16px;
+  font-size: 1rem;
+  font-weight: 600;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 44px;
 }
 
 .btn:disabled {
@@ -150,7 +151,41 @@ body {
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-danger:not(:disabled):hover { background: var(--danger-hover); }
 
-.btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+.btn-sm { padding: 8px 12px; font-size: 0.95rem; min-height: 44px; }
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+.page-links {
+  margin-top: 8px;
+}
+
+.page-links a {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.logo-area {
+  flex-wrap: wrap;
+}
 
 .btn-group {
   display: flex;
@@ -167,8 +202,26 @@ body {
 }
 
 @media (max-width: 650px) {
+  body {
+    padding: 12px;
+  }
+
   .preview-container {
     grid-template-columns: 1fr;
+  }
+
+  .logo-area h1 {
+    font-size: 1.45rem;
+  }
+
+  .form-row,
+  .btn-group {
+    align-items: stretch;
+  }
+
+  .form-row .btn,
+  .btn-group .btn {
+    flex: 1 1 140px;
   }
 }
 
