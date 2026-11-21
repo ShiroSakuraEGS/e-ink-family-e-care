@@ -294,7 +294,7 @@ function evaluateSystemBroadcastState(manualTime = null, triggerRefresh = false)
     sysConfig.currentMode = 'schedule_active';
     updateModeBanner(
       `🔔 排程插播中：${matchedSchedule.title}`,
-      `時間已到 ${matchedSchedule.time}，等長輩按「我看到了」`,
+      `${matchedSchedule.time} 到了，請等長輩按確認`,
       "等待確認"
     );
 
@@ -409,12 +409,12 @@ function triggerDeviceAlert(payload) {
 
   if (led) led.classList.add('breathing');
   if (label) {
-    label.textContent = "收到新訊息 (等待長輩確認)";
-    label.style.color = "#10b981";
+    label.textContent = "有新訊息";
+    label.style.color = "#6ee7b7";
   }
   if (hint) {
-    hint.textContent = "⚠️ 請長輩按右側大按鈕確認收到 👇";
-    hint.style.color = "#fca5a5";
+    hint.textContent = "請按大按鈕";
+    hint.style.color = "#fecaca";
   }
 
   playCuteBuzzer();
@@ -428,12 +428,12 @@ function resetDeviceAlert() {
 
   if (led) led.classList.remove('breathing');
   if (label) {
-    label.textContent = "超低功耗休眠中 (<15µA)";
-    label.style.color = "#9ca3af";
+    label.textContent = "休眠中";
+    label.style.color = "#e5e7eb";
   }
   if (hint) {
-    hint.textContent = "長輩收到請按大按鈕 👇";
-    hint.style.color = "#9ca3af";
+    hint.textContent = "看完可按大按鈕";
+    hint.style.color = "#e5e7eb";
   }
 }
 
@@ -466,9 +466,9 @@ function renderDeviceScreen(msg) {
   }
 
   if (channelInfo) {
-    channelInfo.innerHTML = msg.type === 'schedule'
-      ? `<span style="color:var(--eink-red);font-weight:800;">🔴 排程插播 (等待按鈕確認)</span>`
-      : `<span>家庭常態廣播通道</span>`;
+    const waiting = msg.type === 'schedule';
+    channelInfo.textContent = waiting ? '請按大按鈕' : '日常輪播';
+    channelInfo.classList.toggle('is-alert', waiting);
   }
 
   if (titleEl) {
