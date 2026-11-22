@@ -102,15 +102,23 @@ let selectedTriColor = "#c62828"; // 黑紅白中的緋紅
 // 1. Web Audio API 音效引擎 (微動開關 Click 音 ＋ 壓電蜂鳴音 ＋ NFC 音)
 // ==============================================================================
 let audioCtx = null;
+let audioUnlocked = false;
 
-function getAudioContext() {
+function unlockAudioFromGesture() {
+  audioUnlocked = true;
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
     audioCtx = new AudioContextClass();
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+}
+
+function getAudioContext() {
+  if (!audioUnlocked) return null;
+  unlockAudioFromGesture();
   return audioCtx;
 }
 
@@ -118,6 +126,7 @@ function getAudioContext() {
 function playCuteBuzzer() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 升調和弦
 
@@ -147,6 +156,7 @@ function playCuteBuzzer() {
 function playSwitchClick() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -170,6 +180,7 @@ function playSwitchClick() {
 function playSuccessDing() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -192,6 +203,7 @@ function playSuccessDing() {
 function playNfcSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -282,7 +294,7 @@ function evaluateSystemBroadcastState(manualTime = null, triggerRefresh = false)
     sysConfig.currentMode = 'schedule_active';
     updateModeBanner(
       `🔔 排程插播中：${matchedSchedule.title}`,
-      `時間已到 (${matchedSchedule.time})，客廳終端等待長輩按鍵確認`,
+      `${matchedSchedule.time} 到了，請等長輩按確認`,
       "等待確認"
     );
 
@@ -397,12 +409,12 @@ function triggerDeviceAlert(payload) {
 
   if (led) led.classList.add('breathing');
   if (label) {
-    label.textContent = "收到新訊息 (等待長輩確認)";
-    label.style.color = "#10b981";
+    label.textContent = "有新訊息";
+    label.style.color = "#6ee7b7";
   }
   if (hint) {
-    hint.textContent = "⚠️ 請長輩按右側大按鈕確認收到 👇";
-    hint.style.color = "#fca5a5";
+    hint.textContent = "請按大按鈕";
+    hint.style.color = "#fecaca";
   }
 
   playCuteBuzzer();
@@ -416,12 +428,12 @@ function resetDeviceAlert() {
 
   if (led) led.classList.remove('breathing');
   if (label) {
-    label.textContent = "超低功耗休眠中 (<15µA)";
-    label.style.color = "#9ca3af";
+    label.textContent = "休眠中";
+    label.style.color = "#e5e7eb";
   }
   if (hint) {
-    hint.textContent = "長輩收到請按大按鈕 👇";
-    hint.style.color = "#9ca3af";
+    hint.textContent = "看完可按大按鈕";
+    hint.style.color = "#e5e7eb";
   }
 }
 
@@ -454,9 +466,9 @@ function renderDeviceScreen(msg) {
   }
 
   if (channelInfo) {
-    channelInfo.innerHTML = msg.type === 'schedule'
-      ? `<span style="color:var(--eink-red);font-weight:800;">🔴 排程插播 (等待按鈕確認)</span>`
-      : `<span>家庭常態廣播通道</span>`;
+    const waiting = msg.type === 'schedule';
+    channelInfo.textContent = waiting ? '請按大按鈕' : '日常輪播';
+    channelInfo.classList.toggle('is-alert', waiting);
   }
 
   if (titleEl) {
@@ -470,7 +482,8 @@ function renderDeviceScreen(msg) {
 
   if (textEl) {
     textEl.textContent = msg.content || "";
-    textEl.style.fontSize = `${currentFontSize}px`;
+    const relative = Math.max(3.2, Math.min(5.2, (currentFontSize / 600) * 100));
+    textEl.style.fontSize = `${relative}cqi`;
   }
 
   if (emojiEl) {
@@ -1043,10 +1056,14 @@ function initEventBindings() {
   // 底部導航切換
   document.querySelectorAll('.nav-tab-item').forEach(item => {
     item.addEventListener('click', () => {
-      document.querySelectorAll('.nav-tab-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.nav-tab-item').forEach(i => {
+        i.classList.remove('active');
+        i.removeAttribute('aria-current');
+      });
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
       item.classList.add('active');
+      item.setAttribute('aria-current', 'page');
       const targetId = item.getAttribute('data-tab');
       document.getElementById(targetId)?.classList.add('active');
 
@@ -1145,7 +1162,9 @@ function initEventBindings() {
 
       // 同步 Emoji
       document.querySelectorAll('#emojiPicker .emoji-circle').forEach(ec => {
-        ec.classList.toggle('selected', ec.textContent.trim() === selectedEmoji);
+        const on = ec.textContent.trim() === selectedEmoji;
+        ec.classList.toggle('selected', on);
+        ec.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
 
       if (window.redrawDesignerCanvas) window.redrawDesignerCanvas();
@@ -1175,8 +1194,12 @@ function initEventBindings() {
   // Emoji 挑選
   document.querySelectorAll('#emojiPicker .emoji-circle').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#emojiPicker .emoji-circle').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('#emojiPicker .emoji-circle').forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('selected');
+      btn.setAttribute('aria-pressed', 'true');
       selectedEmoji = btn.textContent.trim();
       if (window.redrawDesignerCanvas) window.redrawDesignerCanvas();
     });
@@ -1237,7 +1260,9 @@ function initEventBindings() {
 
     // 同步 Emoji UI
     document.querySelectorAll('#emojiPicker .emoji-circle').forEach(ec => {
-      ec.classList.toggle('selected', ec.textContent.trim() === selectedEmoji);
+      const on = ec.textContent.trim() === selectedEmoji;
+      ec.classList.toggle('selected', on);
+      ec.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
 
     if (window.redrawDesignerCanvas) window.redrawDesignerCanvas();
@@ -1368,6 +1393,8 @@ function initEventBindings() {
 }
 
 // 啟動主流程
+window.addEventListener('pointerdown', unlockAudioFromGesture, { once: true });
+
 window.addEventListener('DOMContentLoaded', () => {
   initDesignerCanvas();
   initSignaturePad();

@@ -12,9 +12,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3.1">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="stylesheet" href="style.css?v=3.3">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">跳到主要內容</a>
   <div class="ambient-glow-bg"></div>
 
   <div class="layout-container">
@@ -27,36 +30,43 @@
         <div class="brand-text">
           <div class="brand-badge-line">
             <h1>Family E-Care</h1>
-            <span class="tag-version">PROTOTYPE 3.0</span>
-            <span class="tag-spec">4.2" 橫向黑紅白三色</span>
+            <span class="tag-version">原型</span>
+            <span class="tag-spec">4.2 吋橫向</span>
           </div>
-          <span class="subtext">遠端長輩關懷與智慧電子紙系統 · N條常態輪播 ＋ 智慧排程插播聯動</span>
+          <p class="subtext">遠方家人寫一句話，客廳電子紙用大字顯示給長輩看。</p>
         </div>
       </div>
 
       <div class="nav-controls">
-        <div class="eink-spec-capsule">
-          <span class="dot-tri-bwr"></span>
-          <span class="capsule-text">三色電子紙 (黑 / 紅 / 白) 橫向 400×300 (600×380 映射)</span>
+        <p class="eink-spec-capsule">
+          <span class="dot-tri-bwr" aria-hidden="true"></span>
+          <span class="capsule-text">黑 · 紅 · 白　一次只顯示一則</span>
+        </p>
+
+        <div class="nav-actions">
+          <button type="button" id="btnZoomToggle" class="btn-glass" title="放大檢視紙面與黑紅墨水">
+            <span class="icon" aria-hidden="true">🔍</span> 看紙面
+          </button>
+
+          <button type="button" id="btnQuickDemo" class="btn-glow-primary">
+            <span class="btn-spark" aria-hidden="true">⚡</span> 模擬發送
+          </button>
         </div>
-
-        <button id="btnZoomToggle" class="btn-glass" title="放大檢視微米紙質與黑紅墨水粒子">
-          <span class="icon">🔍</span> 墨水微粒
-        </button>
-
-        <button id="btnQuickDemo" class="btn-glow-primary">
-          <span class="btn-spark">⚡</span> 模擬手機發送
-        </button>
       </div>
     </header>
 
     <!-- 主展示工作區：左側現代手機 App + 右側客廳電子紙精品實體機 -->
-    <main class="workspace">
+    <main class="workspace" id="main-content" tabindex="-1">
       
       <!-- ========================================================= -->
       <!-- 視圖 A: 遠端子女端手機 App (iPhone 16 Pro 旗艦質感外框)    -->
       <!-- ========================================================= -->
-      <section class="phone-frame">
+      <section class="audience-column" aria-labelledby="family-app-heading">
+        <div class="audience-heading">
+          <p class="panel-kicker" id="family-app-heading">家屬這一側</p>
+          <p class="panel-lead">寫關懷卡、排輪播與吃藥時間。長輩不用操作這個畫面。</p>
+        </div>
+      <div class="phone-frame">
         <div class="phone-speaker-earpiece"></div>
 
         <!-- 動態島 (Dynamic Island) 交互中心 -->
@@ -127,7 +137,7 @@
                   <span class="dot-red"></span>
                   <span class="dot-black"></span>
                   <span class="dot-white"></span>
-                  <span class="mount-label">橫向 4.2 吋黑紅白三色電子紙 (1:1 實時映射)</span>
+                  <span class="mount-label">草稿預覽，送出後才會換到客廳的紙上</span>
                 </div>
                 <div class="canvas-wrapper-landscape">
                   <canvas id="designerCanvas" width="600" height="380"></canvas>
@@ -136,8 +146,8 @@
               
               <!-- 畫布快捷動作列 (不用滾動到底部即可隨時發送或同步) -->
               <div class="canvas-action-toolbar">
-                <button id="btnQuickSend" class="btn-tool-send">🚀 發送卡片至客廳</button>
-                <button id="btnSyncFromDevice" class="btn-tool-sync">📥 載入客廳當前畫面</button>
+                <button type="button" id="btnQuickSend" class="btn-tool-send">發送到客廳</button>
+                <button type="button" id="btnSyncFromDevice" class="btn-tool-sync">載入客廳畫面</button>
               </div>
             </div>
 
@@ -211,17 +221,17 @@
               <!-- 主題 Emoji 徽飾 -->
               <div class="form-section">
                 <label class="studio-label">主題圖示 Emoji</label>
-                <div class="emoji-carousel" id="emojiPicker">
-                  <span class="emoji-circle selected">🌸</span>
-                  <span class="emoji-circle">💊</span>
-                  <span class="emoji-circle">🏥</span>
-                  <span class="emoji-circle">🍵</span>
-                  <span class="emoji-circle">👵</span>
-                  <span class="emoji-circle">🍲</span>
-                  <span class="emoji-circle">🧣</span>
-                  <span class="emoji-circle">🚶</span>
-                  <span class="emoji-circle">🍎</span>
-                  <span class="emoji-circle">❤️</span>
+                <div class="emoji-carousel" id="emojiPicker" role="group" aria-label="主題圖示">
+                  <button type="button" class="emoji-circle selected" aria-pressed="true" aria-label="花朵">🌸</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="藥品">💊</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="醫院">🏥</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="茶">🍵</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="長輩">👵</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="料理">🍲</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="圍巾">🧣</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="散步">🚶</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="水果">🍎</button>
+                  <button type="button" class="emoji-circle" aria-pressed="false" aria-label="愛心">❤️</button>
                 </div>
               </div>
 
@@ -270,7 +280,7 @@
               </div>
 
               <!-- 發送大按鈕 -->
-              <button id="btnSendDesign" class="btn-action-send">
+              <button type="button" id="btnSendDesign" class="btn-action-send">
                 <span class="send-glow"></span>
                 <span class="send-text">🚀 發送卡片至客廳橫向電子紙</span>
               </button>
@@ -491,28 +501,28 @@
               <p>NFC 專職初次觸碰配網，日常遠端訊息由家庭 Wi-Fi ＋ 350mAh 鋰電維持</p>
             </div>
 
-            <div class="modern-card">
+            <form class="modern-card" id="nfcProvisionForm" autocomplete="off" onsubmit="return false;">
               <div class="card-title-icon">
-                <span class="icon-bubble">📲</span>
-                <h4>NFC 一碰快速配網 (Provisioning)</h4>
+                <span class="icon-bubble" aria-hidden="true">📲</span>
+                <h4>第一次把家裡的 Wi-Fi 寫進裝置</h4>
               </div>
-              <p class="card-desc-text">初次拆箱或更換家用路由器時，手機背面貼近裝置 NFC 標籤即可寫入：</p>
+              <p class="card-desc-text">換路由器或剛拆箱時，手機貼近裝置一下即可。平常傳訊息走 Wi-Fi，不再用 NFC。</p>
               
               <div class="form-group-modern">
-                <label>家用 Wi-Fi 名稱 (SSID 2.4GHz)</label>
-                <input type="text" id="cfgWifiSsid" class="modern-input" value="Home_Care_2.4G">
+                <label for="cfgWifiSsid">家用 Wi-Fi 名稱（2.4GHz）</label>
+                <input type="text" id="cfgWifiSsid" class="modern-input" value="Home_Care_2.4G" autocomplete="username">
               </div>
 
               <div class="form-group-modern">
-                <label>家用 Wi-Fi 密碼</label>
-                <input type="password" id="cfgWifiPass" class="modern-input" value="CareGrandma2026">
+                <label for="cfgWifiPass">家用 Wi-Fi 密碼</label>
+                <input type="password" id="cfgWifiPass" class="modern-input" value="CareGrandma2026" autocomplete="current-password">
               </div>
 
-              <button id="btnSimulateNfc" class="btn-nfc-touch">
-                <span class="nfc-wave"></span>
-                <span>📱 模擬手機 NFC 觸碰配網</span>
+              <button type="button" id="btnSimulateNfc" class="btn-nfc-touch">
+                <span class="nfc-wave" aria-hidden="true"></span>
+                <span>模擬手機貼近配網</span>
               </button>
-            </div>
+            </form>
 
             <div class="modern-card">
               <div class="card-title-icon">
@@ -549,42 +559,47 @@
         </div>
 
         <!-- App 底部浮動標籤導航列 (iOS 磨砂玻璃風格) -->
-        <nav class="app-bottom-bar">
-          <button class="nav-tab-item active" data-tab="tab-designer">
-            <span class="tab-emoji">🎨</span>
+        <nav class="app-bottom-bar" aria-label="家屬功能">
+          <button type="button" class="nav-tab-item active" data-tab="tab-designer" aria-current="page">
+            <span class="tab-emoji" aria-hidden="true">🎨</span>
             <span class="tab-title">關懷卡</span>
           </button>
-          <button class="nav-tab-item" data-tab="tab-carousel">
-            <span class="tab-emoji">🔄</span>
+          <button type="button" class="nav-tab-item" data-tab="tab-carousel">
+            <span class="tab-emoji" aria-hidden="true">🔄</span>
             <span class="tab-title">輪播</span>
           </button>
-          <button class="nav-tab-item" data-tab="tab-schedule">
-            <span class="tab-emoji">⏰</span>
+          <button type="button" class="nav-tab-item" data-tab="tab-schedule">
+            <span class="tab-emoji" aria-hidden="true">⏰</span>
             <span class="tab-title">排程</span>
           </button>
-          <button class="nav-tab-item" data-tab="tab-history">
-            <span class="tab-emoji">📋</span>
+          <button type="button" class="nav-tab-item" data-tab="tab-history">
+            <span class="tab-emoji" aria-hidden="true">📋</span>
             <span class="tab-title">紀錄</span>
           </button>
-          <button class="nav-tab-item" data-tab="tab-settings">
-            <span class="tab-emoji">⚙️</span>
+          <button type="button" class="nav-tab-item" data-tab="tab-settings">
+            <span class="tab-emoji" aria-hidden="true">⚙️</span>
             <span class="tab-title">設定</span>
           </button>
         </nav>
 
-        <div class="phone-home-indicator"></div>
+        <div class="phone-home-indicator" aria-hidden="true"></div>
+      </div>
       </section>
 
       <!-- ========================================================= -->
       <!-- 視圖 B: 客廳 4.2 吋黑紅白橫向電子紙實體模擬器              -->
       <!-- ========================================================= -->
-      <section class="device-simulator-showcase">
+      <section class="device-simulator-showcase" aria-labelledby="device-heading">
+        <div class="audience-heading">
+          <p class="panel-kicker">長輩這一側</p>
+          <p class="panel-lead">電子紙只留黑、紅、白，字要大、一次一則，看完按大按鈕。</p>
+        </div>
         <div class="showcase-header">
           <div class="device-title-tag">
-            <span class="tag-icon">🏡</span>
+            <span class="tag-icon" aria-hidden="true">🏡</span>
             <div>
-              <h3>客廳 E-Care 電子紙終端 (橫向顯示版)</h3>
-              <span class="tag-meta">4.2" 黑紅白三色 · 橫向相框工藝 · 實體大按鍵</span>
+              <h3 id="device-heading">客廳裡長輩看到的畫面</h3>
+              <span class="tag-meta">4.2 吋橫向 · 黑紅白 · 400×300 點</span>
             </div>
           </div>
 
@@ -701,7 +716,7 @@
                 <div class="button-action-hint" id="buttonHint">長輩收到請按 👇</div>
                 
                 <!-- 大顆實體「我看到了 / 收到」按鍵 (G-1) -->
-                <button id="btnDeviceConfirm" class="ergonomic-tactile-btn landscape-confirm-btn">
+                <button type="button" id="btnDeviceConfirm" class="ergonomic-tactile-btn landscape-confirm-btn" aria-label="我看到了，按壓確認">
                   <span class="tactile-cap">⭕ 我看到了<br><small>按壓確認</small></span>
                 </button>
 
@@ -709,8 +724,8 @@
                 <div class="landscape-side-rockers">
                   <span class="rocker-hint">手動翻頁</span>
                   <div class="rocker-pair">
-                    <button class="side-rocker-btn" id="btnSidePrev" title="上一則訊息">▲</button>
-                    <button class="side-rocker-btn" id="btnSideNext" title="下一則訊息">▼</button>
+                    <button type="button" class="side-rocker-btn" id="btnSidePrev" aria-label="上一則訊息">上一則</button>
+                    <button type="button" class="side-rocker-btn" id="btnSideNext" aria-label="下一則訊息">下一則</button>
                   </div>
                 </div>
 
@@ -728,8 +743,8 @@
         <!-- 模擬器運作除錯與測試輔助面板 (包含使用者核心排程測試按鈕) -->
         <div class="test-bench-card">
           <div class="bench-header">
-            <h4>🧪 排程聯動與場景測試面板 (DevTools)</h4>
-            <span class="bench-tag">Scenario Testing</span>
+            <h4>情境驗收</h4>
+            <span class="bench-tag">只給展示與開發，不會出現在長輩的紙上</span>
           </div>
 
           <!-- 核心業務邏輯快捷驗收場景 -->
@@ -764,6 +779,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=3.1"></script>
+  <script src="app.js?v=3.3"></script>
 </body>
 </html>

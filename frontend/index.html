@@ -4,27 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>E Ink Spectra 6 NFC 電子名牌 Web 控制台</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=2">
   <!-- 載入 Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <a class="skip-link" href="#console-main">跳到控制步驟</a>
   <div class="app-container">
     <header class="app-header">
       <div class="logo-area">
         <h1>Bagi (NFC) 3.6” Spectra 6</h1>
-        <span class="badge-tag">Web Serial & Cloud Controller</span>
+        <span class="badge-tag">工程控制台</span>
       </div>
-      <p class="subtitle">E Ink 3.6 吋彩色電子紙無線 NFC 刷卡控制台</p>
+      <p class="subtitle">給接上 USB 發射板的人使用。家人傳送關懷請回客廳原型。</p>
+      <p class="page-links"><a href="../">回到客廳關懷原型</a></p>
     </header>
 
-    <main class="main-content">
+    <main class="main-content" id="console-main">
       <!-- 步驟 1: 序列埠連線 -->
       <section class="card">
         <h2>1. 裝置連線 (Device Connection)</h2>
         <div class="form-row">
-          <button id="btnConnect" class="btn btn-primary">連接 USB Tx 發射板</button>
-          <button id="btnDisconnect" class="btn btn-secondary" disabled>中斷連線</button>
+          <button type="button" id="btnConnect" class="btn btn-primary">連接 USB Tx 發射板</button>
+          <button type="button" id="btnDisconnect" class="btn btn-secondary" disabled>中斷連線</button>
           <span id="connStatus" class="status-indicator disconnected">未連線</span>
         </div>
         <p class="hint">請使用 Chrome 或 Edge 瀏覽器，插入 Micro-USB 線至 Tx 板後點擊「連接 USB Tx 發射板」。</p>
@@ -35,7 +38,7 @@
         <h2>2. 選擇影像與色彩抖動 (Image & Spectra 6 Dithering)</h2>
         <div class="form-row">
           <input type="file" id="fileInput" accept="image/png, image/jpeg, image/bmp" class="file-input">
-          <button id="btnSample" class="btn btn-secondary">載入範例名牌</button>
+          <button type="button" id="btnSample" class="btn btn-secondary">載入範例名牌</button>
         </div>
         
         <div class="preview-container">
@@ -59,9 +62,9 @@
         </div>
 
         <div class="btn-group">
-          <button id="btnPairing" class="btn btn-warning" disabled>配對裝置 (Pairing)</button>
-          <button id="btnStartSend" class="btn btn-success" disabled>開始傳輸 (Start Send)</button>
-          <button id="btnExit" class="btn btn-danger" disabled>完成 / 結束 (Exit)</button>
+          <button type="button" id="btnPairing" class="btn btn-warning" disabled>配對裝置</button>
+          <button type="button" id="btnStartSend" class="btn btn-success" disabled>開始傳輸</button>
+          <button type="button" id="btnExit" class="btn btn-danger" disabled>完成並結束</button>
         </div>
 
         <!-- 傳輸進度條 -->
@@ -80,7 +83,7 @@
       <section class="card">
         <div class="log-header">
           <h2>通訊日誌 (Communication Log)</h2>
-          <button id="btnClearLog" class="btn btn-sm btn-secondary">清除日誌</button>
+          <button type="button" id="btnClearLog" class="btn btn-secondary">清除日誌</button>
         </div>
         <pre id="logOutput" class="log-output"></pre>
       </section>
